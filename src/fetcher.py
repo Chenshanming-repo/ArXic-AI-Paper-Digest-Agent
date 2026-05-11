@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import logging
 import re
+import time
 import xml.etree.ElementTree as ET
 from datetime import datetime, timedelta, timezone
 
@@ -21,12 +22,68 @@ _NS = {
 
 _WS_RE = re.compile(r"\s+")
 
+# ArXiv asks API clients to identify themselves with a descriptive
+# User-Agent. Generic library UAs (e.g. python-httpx/x.y.z) get throttled
+# aggressively, especially from shared egress IPs like GitHub Actions runners.
+USER_AGENT = (
+    "ArxivDigestBot/0.1 "
+    "(+https://github.com/Kiraaa1/ArXic-AI-Paper-Digest-Agent)"
+)
+
+# Retry policy for transient ArXiv errors (429, 5xx).
+_RETRY_STATUSES = {429, 500, 502, 503, 504}
+_MAX_ATTEMPTS = 4
+_BACKOFF_BASE_SECONDS = 5.0
+_BACKOFF_CAP_SECONDS = 60.0
+
 
 def _normalise(text: str | None) -> str:
     """Collapse runs of whitespace to single spaces and strip."""
     if text is None:
         return ""
     return _WS_RE.sub(" ", text).strip()
+
+
+def _retry_after_seconds(response: httpx.Response, attempt: int) -> float:
+    """Pick a wait time for the next retry.
+
+    Honours the server's `Retry-After` header when present, otherwise uses
+    exponential backoff: 5s, 10s, 20s, ... capped at 60s.
+    """
+    header = response.headers.get("Retry-After")
+    if header:
+        try:
+            return max(0.0, float(header))
+        except ValueError:
+            pass
+    return min(_BACKOFF_BASE_SECONDS * (2 ** (attempt - 1)), _BACKOFF_CAP_SECONDS)
+
+
+def _request_with_retry(
+    client: httpx.Client, api_url: str, params: dict[str, str]
+) -> str:
+    """GET the ArXiv API with retry/backoff on 429 and 5xx responses."""
+    last_response: httpx.Response | None = None
+    for attempt in range(1, _MAX_ATTEMPTS + 1):
+        response = client.get(api_url, params=params)
+        last_response = response
+        if response.status_code in _RETRY_STATUSES and attempt < _MAX_ATTEMPTS:
+            wait = _retry_after_seconds(response, attempt)
+            logger.warning(
+                "ArXiv returned %d on attempt %d/%d; sleeping %.1fs before retry",
+                response.status_code,
+                attempt,
+                _MAX_ATTEMPTS,
+                wait,
+            )
+            time.sleep(wait)
+            continue
+        response.raise_for_status()
+        return response.text
+    # Exhausted retries while still on a retryable status.
+    assert last_response is not None
+    last_response.raise_for_status()
+    return last_response.text  # pragma: no cover - unreachable
 
 
 def _build_search_query(categories: list[str]) -> str:
@@ -133,11 +190,13 @@ def fetch_recent_papers(
     )
 
     owns_client = http_client is None
-    client = http_client or httpx.Client(timeout=30.0, follow_redirects=True)
+    client = http_client or httpx.Client(
+        timeout=30.0,
+        follow_redirects=True,
+        headers={"User-Agent": USER_AGENT},
+    )
     try:
-        response = client.get(api_url, params=params)
-        response.raise_for_status()
-        body = response.text
+        body = _request_with_retry(client, api_url, params)
     finally:
         if owns_client:
             client.close()
