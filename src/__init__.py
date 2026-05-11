@@ -1,0 +1,1 @@
+"""ArXiv digest bot package."""
