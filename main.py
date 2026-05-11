@@ -67,7 +67,7 @@ def run() -> int:
 
     if not papers:
         logger.info(
-            "No papers found in the last %dh for categories %s — exiting "
+            "No papers found in the last %dh for categories %s, exiting "
             "cleanly without writing.",
             config.LOOKBACK_HOURS,
             config.CATEGORIES,
@@ -86,7 +86,7 @@ def run() -> int:
 
     if not entries:
         logger.warning(
-            "All %d papers failed to summarise — exiting without writing.",
+            "All %d papers failed to summarise, exiting without writing.",
             len(papers),
         )
         return 0

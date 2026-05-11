@@ -3,7 +3,7 @@
 An automated daily digest of new ArXiv papers in your favourite categories,
 summarised by an OpenAI model and committed straight back to this repository.
 
-The whole thing runs on GitHub Actions — there is no server to host, no
+The whole thing runs on GitHub Actions. There is no server to host, no
 database to maintain, and no infrastructure to pay for beyond a small
 OpenAI API bill.
 
@@ -17,10 +17,10 @@ Every day at **09:00 UTC**, a scheduled GitHub Action:
 2. Filters down to papers submitted in the last 24 hours.
 3. Sends each abstract to OpenAI (`gpt-4o-mini` by default) to produce a
    concise 2–3 sentence plain-English summary.
-4. Appends the day's digest to [`digest/digest.md`](digest/digest.md) — a
+4. Appends the day's digest to [`digest/digest.md`](digest/digest.md), a
    running log you can read like a journal.
 5. Overwrites [`digest/latest.md`](digest/latest.md) with just today's
-   entries — useful for any external consumer that wants a small,
+   entries. Useful for any external consumer that wants a small,
    stable file to pull from.
 6. Commits and pushes the changes back to `main`. If there is nothing new
    (e.g. quiet weekends, ArXiv outage), the run exits cleanly and creates
@@ -37,7 +37,7 @@ Every day at **09:00 UTC**, a scheduled GitHub Action:
    *Allow all actions*). Forks have Actions disabled by default.
 4. Make sure the workflow has write access. With the default setting
    `permissions: contents: write` already in the workflow file, the
-   built-in `GITHUB_TOKEN` is sufficient — no PAT required.
+   built-in `GITHUB_TOKEN` is sufficient (no PAT required).
 5. (Optional) Trigger a first run manually: **Actions → Daily ArXiv Digest
    → Run workflow**.
 
@@ -138,4 +138,4 @@ arxiv-digest/
 
 ## License
 
-MIT — see [`LICENSE`](LICENSE) if present, or feel free to add one.
+MIT. See [`LICENSE`](LICENSE) if present, or feel free to add one.
