@@ -43,8 +43,8 @@ LOOKBACK_HOURS: int = _env_int("LOOKBACK_HOURS", 24)
 # 50 is plenty when monitoring a handful of categories.
 ARXIV_PAGE_SIZE: int = _env_int("ARXIV_PAGE_SIZE", 50)
 
-# ArXiv API endpoint.
-ARXIV_API_URL: str = "http://export.arxiv.org/api/query"
+# ArXiv API endpoint. Use https; the http endpoint redirects.
+ARXIV_API_URL: str = "https://export.arxiv.org/api/query"
 
 # OpenAI model used for summarisation. gpt-4o-mini is cheap and fast and
 # perfectly adequate for 2-3 sentence summaries.

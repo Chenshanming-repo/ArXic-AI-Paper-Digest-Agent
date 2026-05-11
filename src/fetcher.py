@@ -56,7 +56,7 @@ def _parse_entry(entry: ET.Element) -> Paper | None:
         return None
 
     # ArXiv's <id> is the abs URL with a version suffix, e.g.
-    # http://arxiv.org/abs/2401.12345v2 — keep it but force https.
+    # http://arxiv.org/abs/2401.12345v2 - keep it but force https.
     canonical_url = raw_url.replace("http://", "https://", 1)
     arxiv_id = canonical_url.rsplit("/", 1)[-1]
 
@@ -133,7 +133,7 @@ def fetch_recent_papers(
     )
 
     owns_client = http_client is None
-    client = http_client or httpx.Client(timeout=30.0)
+    client = http_client or httpx.Client(timeout=30.0, follow_redirects=True)
     try:
         response = client.get(api_url, params=params)
         response.raise_for_status()
