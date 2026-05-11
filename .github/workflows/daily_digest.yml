@@ -43,10 +43,13 @@ jobs:
           git config user.name "github-actions"
           git config user.email "actions@github.com"
 
-          git add digest/digest.md digest/latest.md
+          # Stage the whole digest directory so the step is a no-op when
+          # main.py exits cleanly without writing (e.g. no papers in the
+          # lookback window, or all summaries failed).
+          git add digest/
 
           if git diff --staged --quiet; then
-            echo "No digest changes to commit."
+            echo "No digest changes to commit (no new papers, or content unchanged)."
             exit 0
           fi
 
