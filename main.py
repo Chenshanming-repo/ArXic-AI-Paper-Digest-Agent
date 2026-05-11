@@ -1,12 +1,13 @@
 """Daily ArXiv digest orchestrator.
 
 Run from the GitHub Action (or locally) to:
-  1. Fetch recent papers from configured ArXiv categories.
-  2. Summarise each one with OpenAI.
-  3. Append the result to digest/digest.md and overwrite digest/latest.md.
+  1. Fetch the most recent ArXiv submissions in the configured categories.
+  2. Drop any papers we have already digested on a previous day.
+  3. Summarise up to MAX_PAPERS of the remainder with OpenAI.
+  4. Append the result to digest/digest.md and overwrite digest/latest.md.
 
-Exits with code 0 on success (including the "no papers today" case) and
-code 1 on a fatal error so the Action shows as failed.
+Exits with code 0 on success (including the "no new papers today" case)
+and code 1 on a fatal error so the Action shows as failed.
 """
 
 from __future__ import annotations
@@ -23,7 +24,7 @@ import config
 from src.fetcher import fetch_recent_papers
 from src.models import Digest
 from src.summariser import summarise_papers
-from src.writer import append_to_digest, render_digest, write_latest
+from src.writer import append_to_digest, read_seen_arxiv_ids, render_digest, write_latest
 
 logger = logging.getLogger("arxiv_digest")
 
@@ -56,24 +57,38 @@ def run() -> int:
     now = datetime.now(timezone.utc)
     logger.info("Starting digest run at %s", now.isoformat())
 
-    papers = fetch_recent_papers(
+    fetched = fetch_recent_papers(
         categories=config.CATEGORIES,
-        lookback_hours=config.LOOKBACK_HOURS,
-        max_results=config.MAX_PAPERS,
         page_size=config.ARXIV_PAGE_SIZE,
         api_url=config.ARXIV_API_URL,
-        now=now,
     )
 
-    if not papers:
+    if not fetched:
         logger.info(
-            "No papers found in the last %dh for categories %s, exiting "
+            "ArXiv returned no parsable papers for categories %s, exiting "
             "cleanly without writing.",
-            config.LOOKBACK_HOURS,
             config.CATEGORIES,
         )
         return 0
 
+    seen_ids = read_seen_arxiv_ids(config.DIGEST_FILE)
+    fresh = [p for p in fetched if p.arxiv_id not in seen_ids]
+    logger.info(
+        "Filtered %d fetched papers against %d already-digested ids -> %d new",
+        len(fetched),
+        len(seen_ids),
+        len(fresh),
+    )
+
+    if not fresh:
+        logger.info(
+            "All %d most-recent ArXiv papers have already been digested, "
+            "exiting cleanly without writing.",
+            len(fetched),
+        )
+        return 0
+
+    papers = fresh[: config.MAX_PAPERS]
     logger.info("Summarising %d papers with model %s", len(papers), config.OPENAI_MODEL)
 
     client = OpenAI(api_key=api_key)

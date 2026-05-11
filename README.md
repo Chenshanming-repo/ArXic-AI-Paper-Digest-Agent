@@ -12,19 +12,22 @@ OpenAI API bill.
 Every day at **09:00 UTC**, a scheduled GitHub Action:
 
 1. Queries the [ArXiv API](https://info.arxiv.org/help/api/index.html) for
-   the most recent papers in the configured categories
-   (defaults: `cs.AI`, `cs.LG`, `cs.CL`).
-2. Filters down to papers submitted in the last 24 hours.
-3. Sends each abstract to OpenAI (`gpt-4o-mini` by default) to produce a
-   concise 2–3 sentence plain-English summary.
-4. Appends the day's digest to [`digest/digest.md`](digest/digest.md), a
-   running log you can read like a journal.
+   the most recent submissions in the configured categories
+   (defaults: `cs.AI`, `cs.LG`, `cs.CL`), sorted newest first.
+2. Drops any paper whose ArXiv id already appears in
+   [`digest/digest.md`](digest/digest.md), so the same paper is never
+   summarised twice.
+3. Sends up to `MAX_PAPERS` abstracts (default 10) to OpenAI
+   (`gpt-4o-mini` by default) to produce concise 2–3 sentence
+   plain-English summaries.
+4. Appends the day's digest to `digest/digest.md`, a running log you can
+   read like a journal.
 5. Overwrites [`digest/latest.md`](digest/latest.md) with just today's
    entries. Useful for any external consumer that wants a small,
    stable file to pull from.
-6. Commits and pushes the changes back to `main`. If there is nothing new
-   (e.g. quiet weekends, ArXiv outage), the run exits cleanly and creates
-   no commit.
+6. Commits and pushes the changes back to `main`. If everything in the
+   ArXiv response is already digested (e.g. quiet weekends or a re-run
+   on the same day), the run exits cleanly and creates no commit.
 
 ## Setup
 
@@ -73,11 +76,15 @@ by environment variables (see `.env.example`):
 | Setting              | Default                  | Description                                       |
 | -------------------- | ------------------------ | ------------------------------------------------- |
 | `CATEGORIES`         | `cs.AI, cs.LG, cs.CL`    | ArXiv categories to monitor.                      |
-| `MAX_PAPERS`         | `10`                     | Maximum papers summarised per day.                |
-| `LOOKBACK_HOURS`     | `24`                     | Only include papers submitted within this window. |
+| `MAX_PAPERS`         | `10`                     | Maximum papers summarised per run.                |
 | `ARXIV_PAGE_SIZE`    | `50`                     | How many results to pull from ArXiv per query.    |
 | `OPENAI_MODEL`       | `gpt-4o-mini`            | OpenAI model used for summaries.                  |
 | `OPENAI_MAX_TOKENS`  | `300`                    | Max tokens per summary.                           |
+
+The bot picks the top `MAX_PAPERS` papers by ArXiv submission date that it
+has not summarised before. `ARXIV_PAGE_SIZE` should be larger than
+`MAX_PAPERS` to give the dedup step a healthy pool to choose from on busy
+days.
 
 ## Example output
 
@@ -128,8 +135,8 @@ arxiv-digest/
 
 ## Error handling
 
-- **No new papers** (e.g. quiet weekend): logs a message and exits cleanly.
-  No commit is created.
+- **No new papers** (e.g. all top-of-feed papers are already digested):
+  logs a message and exits cleanly. No commit is created.
 - **A single OpenAI call fails**: that paper is skipped, the error is
   logged, and the rest of the digest still ships.
 - **A fatal error** (missing API key, ArXiv unreachable, malformed XML):

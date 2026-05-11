@@ -33,14 +33,12 @@ CATEGORIES: list[str] = _env_list(
     "ARXIV_CATEGORIES", ["cs.AI", "cs.LG", "cs.CL"]
 )
 
-# Cap papers per day to keep summarisation costs predictable.
+# Cap on summaries written per run; controls cost and noise.
 MAX_PAPERS: int = _env_int("MAX_PAPERS", 10)
 
-# Only include papers published within this many hours of the run.
-LOOKBACK_HOURS: int = _env_int("LOOKBACK_HOURS", 24)
-
-# How many results to ask ArXiv for before applying the lookback filter.
-# 50 is plenty when monitoring a handful of categories.
+# How many results to ask ArXiv for. We pull more than MAX_PAPERS so that,
+# after deduplication against papers we have already digested, we still
+# have a healthy pool to choose from.
 ARXIV_PAGE_SIZE: int = _env_int("ARXIV_PAGE_SIZE", 50)
 
 # ArXiv API endpoint. Use https; the http endpoint redirects.

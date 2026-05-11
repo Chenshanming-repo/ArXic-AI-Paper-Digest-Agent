@@ -6,7 +6,7 @@ import logging
 import re
 import time
 import xml.etree.ElementTree as ET
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 
 import httpx
 
@@ -113,9 +113,14 @@ def _parse_entry(entry: ET.Element) -> Paper | None:
         return None
 
     # ArXiv's <id> is the abs URL with a version suffix, e.g.
-    # http://arxiv.org/abs/2401.12345v2 - keep it but force https.
+    # http://arxiv.org/abs/2401.12345v2 (or, for old-format papers,
+    # http://arxiv.org/abs/cs.LG/0301001v1). Force https and keep
+    # everything after /abs/ so the id round-trips through the digest file.
     canonical_url = raw_url.replace("http://", "https://", 1)
-    arxiv_id = canonical_url.rsplit("/", 1)[-1]
+    if "/abs/" in canonical_url:
+        arxiv_id = canonical_url.split("/abs/", 1)[1]
+    else:
+        arxiv_id = canonical_url.rsplit("/", 1)[-1]
 
     try:
         published = datetime.fromisoformat(
@@ -159,21 +164,17 @@ def _parse_entry(entry: ET.Element) -> Paper | None:
 def fetch_recent_papers(
     *,
     categories: list[str],
-    lookback_hours: int,
-    max_results: int,
     page_size: int,
     api_url: str,
-    now: datetime | None = None,
     http_client: httpx.Client | None = None,
 ) -> list[Paper]:
-    """Fetch papers submitted within `lookback_hours`, capped at `max_results`.
+    """Fetch the most recent ArXiv submissions for the given categories.
 
-    The function returns at most `max_results` papers, sorted newest first.
-    Network and parsing errors are surfaced to the caller.
+    Returns up to `page_size` papers sorted by submission date, newest first.
+    No time-window filtering is applied here: the caller is responsible for
+    deduplication and capping the final list. Network and parsing errors
+    are surfaced to the caller.
     """
-    current_time = (now or datetime.now(timezone.utc)).astimezone(timezone.utc)
-    cutoff = current_time - timedelta(hours=lookback_hours)
-
     params = {
         "search_query": _build_search_query(categories),
         "sortBy": "submittedDate",
@@ -183,9 +184,8 @@ def fetch_recent_papers(
     }
 
     logger.info(
-        "Querying ArXiv for categories=%s lookback=%dh page_size=%d",
+        "Querying ArXiv for categories=%s page_size=%d",
         categories,
-        lookback_hours,
         page_size,
     )
 
@@ -206,21 +206,17 @@ def fetch_recent_papers(
     except ET.ParseError as exc:
         raise RuntimeError(f"Failed to parse ArXiv response as XML: {exc}") from exc
 
+    raw_entries = root.findall("atom:entry", _NS)
     papers: list[Paper] = []
-    for entry in root.findall("atom:entry", _NS):
+    for entry in raw_entries:
         paper = _parse_entry(entry)
-        if paper is None:
-            continue
-        if paper.published < cutoff:
-            # Results are sorted descending by submittedDate, so once we see
-            # an entry older than the cutoff we can stop scanning.
-            break
-        papers.append(paper)
+        if paper is not None:
+            papers.append(paper)
 
     logger.info(
-        "ArXiv returned %d entries, %d within lookback window",
-        len(root.findall("atom:entry", _NS)),
+        "ArXiv returned %d entries, %d parsed successfully",
+        len(raw_entries),
         len(papers),
     )
 
-    return papers[:max_results]
+    return papers
