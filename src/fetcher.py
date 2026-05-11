@@ -30,11 +30,13 @@ USER_AGENT = (
     "(+https://github.com/Kiraaa1/ArXic-AI-Paper-Digest-Agent)"
 )
 
-# Retry policy for transient ArXiv errors (429, 5xx).
+# Retry policy for transient ArXiv errors. Network errors (timeouts, etc.)
+# are also retried; see _request_with_retry below.
 _RETRY_STATUSES = {429, 500, 502, 503, 504}
 _MAX_ATTEMPTS = 4
-_BACKOFF_BASE_SECONDS = 5.0
+_BACKOFF_BASE_SECONDS = 10.0
 _BACKOFF_CAP_SECONDS = 60.0
+_REQUEST_TIMEOUT_SECONDS = 60.0
 
 
 def _normalise(text: str | None) -> str:
@@ -44,11 +46,16 @@ def _normalise(text: str | None) -> str:
     return _WS_RE.sub(" ", text).strip()
 
 
+def _backoff_seconds(attempt: int) -> float:
+    """Exponential backoff: 10s, 20s, 40s, ... capped at 60s."""
+    return min(_BACKOFF_BASE_SECONDS * (2 ** (attempt - 1)), _BACKOFF_CAP_SECONDS)
+
+
 def _retry_after_seconds(response: httpx.Response, attempt: int) -> float:
     """Pick a wait time for the next retry.
 
     Honours the server's `Retry-After` header when present, otherwise uses
-    exponential backoff: 5s, 10s, 20s, ... capped at 60s.
+    exponential backoff.
     """
     header = response.headers.get("Retry-After")
     if header:
@@ -56,16 +63,43 @@ def _retry_after_seconds(response: httpx.Response, attempt: int) -> float:
             return max(0.0, float(header))
         except ValueError:
             pass
-    return min(_BACKOFF_BASE_SECONDS * (2 ** (attempt - 1)), _BACKOFF_CAP_SECONDS)
+    return _backoff_seconds(attempt)
 
 
 def _request_with_retry(
     client: httpx.Client, api_url: str, params: dict[str, str]
 ) -> str:
-    """GET the ArXiv API with retry/backoff on 429 and 5xx responses."""
+    """GET the ArXiv API with retry/backoff on 429, 5xx, and network errors.
+
+    GitHub Actions egress IPs are shared and ArXiv frequently throttles or
+    times out requests from them. This loop covers both:
+      - HTTP-level retryable statuses (handled via `_RETRY_STATUSES`).
+      - Network-level errors (`httpx.RequestError`, e.g. `ReadTimeout`,
+        `ConnectTimeout`, transient connection resets).
+    """
     last_response: httpx.Response | None = None
+    last_error: httpx.RequestError | None = None
+
     for attempt in range(1, _MAX_ATTEMPTS + 1):
-        response = client.get(api_url, params=params)
+        try:
+            response = client.get(api_url, params=params)
+        except httpx.RequestError as exc:
+            last_error = exc
+            if attempt >= _MAX_ATTEMPTS:
+                raise
+            wait = _backoff_seconds(attempt)
+            logger.warning(
+                "ArXiv request failed (%s: %s) on attempt %d/%d; "
+                "sleeping %.1fs before retry",
+                type(exc).__name__,
+                exc,
+                attempt,
+                _MAX_ATTEMPTS,
+                wait,
+            )
+            time.sleep(wait)
+            continue
+
         last_response = response
         if response.status_code in _RETRY_STATUSES and attempt < _MAX_ATTEMPTS:
             wait = _retry_after_seconds(response, attempt)
@@ -80,10 +114,13 @@ def _request_with_retry(
             continue
         response.raise_for_status()
         return response.text
-    # Exhausted retries while still on a retryable status.
-    assert last_response is not None
-    last_response.raise_for_status()
-    return last_response.text  # pragma: no cover - unreachable
+
+    # Exhausted retries. Re-raise the most informative failure.
+    if last_response is not None:
+        last_response.raise_for_status()
+        return last_response.text  # pragma: no cover - unreachable
+    assert last_error is not None  # pragma: no cover - retry loop guarantees one of these
+    raise last_error
 
 
 def _build_search_query(categories: list[str]) -> str:
@@ -191,7 +228,7 @@ def fetch_recent_papers(
 
     owns_client = http_client is None
     client = http_client or httpx.Client(
-        timeout=30.0,
+        timeout=_REQUEST_TIMEOUT_SECONDS,
         follow_redirects=True,
         headers={"User-Agent": USER_AGENT},
     )
