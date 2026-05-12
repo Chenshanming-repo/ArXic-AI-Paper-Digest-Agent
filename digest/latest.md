@@ -1,52 +1,52 @@
 ---
-## 2026-05-11
+## 2026-05-12
 
-### 1. The Memory Curse: How Expanded Recall Erodes Cooperative Intent in LLM Agents
-**Authors:** Jiayuan Liu, Tianqin Li, Shiyi Du, Xin Luo, Haoxuan Zeng, Emanuel Tewolde, Tai Sing Lee, Tonghan Wang, Carl Kingsford, Vincent Conitzer
-**Link:** https://arxiv.org/abs/2605.08060v1
-**Summary:** The paper investigates how increasing the memory capacity of large language model (LLM) agents affects their ability to cooperate in multi-agent social dilemmas, revealing a phenomenon called the "memory curse". Through various analyses, the authors demonstrate that while expanding memory tends to deteriorate cooperative intent, targeted fine-tuning and memory sanitization techniques can counteract this decline, highlighting that the content of memory, rather than its length, plays a crucial role in influencing cooperative behavior. Ultimately, the study suggests that memory's impact on multi-agent interactions is complex, as it can either hinder or promote collaboration based on the reasoning strategies employed.
+### 1. ELF: Embedded Language Flows
+**Authors:** Keya Hu, Linlu Qiu, Yiyang Lu, Hanhong Zhao, Tianhong Li, Yoon Kim, Jacob Andreas, Kaiming He
+**Link:** https://arxiv.org/abs/2605.10938v1
+**Summary:** The paper introduces Embedded Language Flows (ELF), a new class of language models that enhance diffusion processes by operating primarily in a continuous embedding space before converting to discrete tokens at the final step. By adapting techniques from image diffusion models, ELF significantly improves generation quality and efficiency, outperforming leading language models with fewer sampling steps. This approach demonstrates a promising direction for developing more effective continuous diffusion language models.
 
-### 2. CA-SQL: Complexity-Aware Inference Time Reasoning for Text-to-SQL via Exploration and Compute Budget Allocation
-**Authors:** James Petullo, Nianwen Xue
-**Link:** https://arxiv.org/abs/2605.08057v1
-**Summary:** The paper introduces CA-SQL, a novel pipeline designed to improve reasoning in Text-to-SQL tasks, particularly for challenging queries in the Bird-Bench benchmark. It utilizes a dynamic exploration strategy based on task difficulty and incorporates an innovative prompt seeding technique to enhance query generation. CA-SQL achieves a state-of-the-art score of 51.72% on difficult BIRD problems, outperforming other approaches while maintaining competitive execution accuracy and F1 scores.
+### 2. Variational Inference for Lévy Process-Driven SDEs via Neural Tilting
+**Authors:** Yaman Kindap, Manfred Opper, Benjamin Dupuis, Umut Simsekli, Tolga Birdal
+**Link:** https://arxiv.org/abs/2605.10934v1
+**Summary:** The paper addresses the challenge of performing Bayesian inference in Lévy-driven stochastic differential equations, which are important for modeling extreme events and heavy-tailed phenomena. The authors propose a novel neural exponential tilting framework that uses neural networks to adjust the Lévy measure, allowing for more accurate and scalable inference while preserving the jump characteristics typical of these processes. Their approach shows significant improvements in capturing jump dynamics and providing reliable posteriors compared to traditional Gaussian-based methods, validated through experiments on both synthetic and real-world data.
 
-### 3. Reinforcement Learning for Exponential Utility: Algorithms and Convergence in Discounted MDPs
-**Authors:** Gugan Thoppe, L. A. Prashanth, Ankur Naskar, Sanjay Bhat
-**Link:** https://arxiv.org/abs/2605.08053v1
-**Summary:** This paper addresses the lack of value-based reinforcement learning algorithms for optimizing exponential utility in discounted Markov decision processes. The authors derive two Q-value-style extensions with contraction properties, leading to the development of two model-free algorithms that demonstrate almost-sure convergence and finite-time convergence rates, despite challenges in the one-timescale algorithm. Their work establishes a foundational framework for applying value-based RL methods to exponential-utility objectives.
+### 3. DECO: Sparse Mixture-of-Experts with Dense-Comparable Performance on End-Side Devices
+**Authors:** Chenyang Song, Weilin Zhao, Xu Han, Chaojun Xiao, Yingfa Chen, Zhiyuan Liu
+**Link:** https://arxiv.org/abs/2605.10933v1
+**Summary:** The paper introduces DECO, a sparse Mixture-of-Experts architecture that aims to achieve the performance of dense Transformers while using significantly fewer computational resources, making it suitable for deployment on end-side devices. By utilizing a novel routing mechanism and a new activation function, DECO activates only 20% of its experts yet matches or exceeds the performance of traditional dense models. Additionally, a specialized acceleration kernel developed for DECO offers a threefold increase in processing speed on real hardware compared to dense inference.
 
-### 4. Accurate and Efficient Statistical Testing for Word Semantic Breadth
-**Authors:** Yo Ehara
-**Link:** https://arxiv.org/abs/2605.08048v1
-**Summary:** The paper addresses the challenge of accurately comparing the semantic breadth of words using contextualized embeddings, which can yield misleading results due to the influence of directional differences. The authors propose a novel permutation test based on Householder reflections that effectively isolates true differences in word breadth from these directional effects, while also enhancing computational efficiency through a GPU-optimized implementation. Their method significantly reduces false positives in statistical tests and allows for faster processing times.
+### 4. Quantifying Concentration Phenomena of Mean-Field Transformers in the Low-Temperature Regime
+**Authors:** Albert Alcalde, Leon Bungert, Konstantin Riedl, Tim Roith
+**Link:** https://arxiv.org/abs/2605.10931v1
+**Summary:** This paper investigates how tokens in deep encoder-only transformers evolve during inference, particularly as the number of tokens increases, by using a mean-field continuity equation to describe their behavior. The authors prove that the token distribution quickly becomes concentrated around a specific limiting distribution influenced by the model parameters and remains stable over a moderate time scale. Their findings are supported by numerical experiments, which also reveal that for longer time periods, the dynamics shift to a new phase affected by the value matrix's spectral properties.
 
-### 5. Uncertainty-Aware Structured Data Extraction from Full CMR Reports via Distilled LLMs
-**Authors:** Yi Yu, Parker Martin, Zhenyu Bu, Yixuan Liu, Yi-Yu Zheng, Orlando Simonetti, Yuchi Han, Yuan Xue
-**Link:** https://arxiv.org/abs/2605.08045v1
-**Summary:** The paper addresses the challenge of converting free-text cardiac magnetic resonance (CMR) reports into structured data for better clinical use. It introduces CMR-EXTR, a framework that uses a teacher-student distillation method to perform this task offline while also providing confidence levels for each extracted data field. The key result is a high variable-level accuracy of 99.65%, marking the first CMR-specific extraction system to incorporate confidence estimation.
+### 5. Dynamic Skill Lifecycle Management for Agentic Reinforcement Learning
+**Authors:** Junhao Shen, Teng Zhang, Xiaoyan Zhao, Hong Cheng
+**Link:** https://arxiv.org/abs/2605.10923v1
+**Summary:** The paper addresses the challenge of efficiently managing external skills in reinforcement learning agents to optimize their performance on complex tasks. It introduces a framework called SLIM that dynamically adjusts the active skill set based on their effectiveness, allowing agents to retain valuable skills, retire those that are no longer useful, and expand their capabilities when needed. The key finding is that SLIM significantly improves performance over existing methods, demonstrating that not all skills need to be internalized into the agent's policy, thus enhancing the overall flexibility and effectiveness of skill utilization in reinforcement learning.
 
-### 6. Fast Byte Latent Transformer
-**Authors:** Julie Kallini, Artidoro Pagnoni, Tomasz Limisiewicz, Gargi Ghosh, Luke Zettlemoyer, Christopher Potts, Xiaochuang Han, Srinivasan Iyer
-**Link:** https://arxiv.org/abs/2605.08044v1
-**Summary:** The paper presents the Byte Latent Transformer (BLT), a new model that improves the slow generation speed of byte-level language models, which previously generated text one byte at a time. The authors introduce innovative training and generation techniques, including a diffusion-based approach that allows for parallel byte generation, as well as methods that enhance quality without significantly sacrificing speed. Key contributions include notable reductions in memory bandwidth costs during generation and practical solutions that enhance the usability of byte-level models.
+### 6. Optimal and Scalable MAPF via Multi-Marginal Optimal Transport and Schrödinger Bridges
+**Authors:** Usman A. Khan, Joseph W. Durham
+**Link:** https://arxiv.org/abs/2605.10917v1
+**Summary:** The paper addresses the problem of multi-agent path finding (MAPF) for robots navigating to targets on a graph, proposing a new approach that treats MAPF as a type of multi-marginal optimal transport (MMOT) problem. They show that this problem can be simplified into a manageable linear program and further enhance scalability by using a probabilistic method called Schrödinger bridges, which streamlines the solution process. The key contribution is the demonstration that their approach yields optimal and efficient paths for numerous robots without overlap in both space and time, even in large-scale scenarios.
 
-### 7. SCOPE: Structured Decomposition and Conditional Skill Orchestration for Complex Image Generation
-**Authors:** Tianfei Ren, Zhipeng Yan, Yiming Zhao, Zhen Fang, Yu Zeng, Guohui Zhang, Hang Xu, Xiaoxiao Ma, Shiting Huang, Ke Xu, Wenxuan Huang, Lionel Z. Wang, Lin Chen, Zehui Chen, Jie Huang, Feng Zhao
-**Link:** https://arxiv.org/abs/2605.08043v1
-**Summary:** The paper addresses the challenge of maintaining consistency in complex image generation tasks, where various visual requirements can easily become misaligned. The authors introduce SCOPE, a framework that systematically tracks these requirements (referred to as semantic commitments) throughout the generation process by orchestrating retrieval, reasoning, and repair skills as needed. Their results show that SCOPE significantly outperforms existing methods in a new benchmark, highlighting its effectiveness in ensuring that intended imagery accurately reflects specified requirements.
+### 7. Confidence-Guided Diffusion Augmentation for Enhanced Bangla Compound Character Recognition
+**Authors:** Md. Sultan Al Rayhan, Maheen Islam
+**Link:** https://arxiv.org/abs/2605.10916v1
+**Summary:** This paper addresses the difficulty of recognizing handwritten Bangla compound characters, which are complex and varied due to their intricate structures and limited training data. The authors introduce a confidence-guided diffusion augmentation technique that synthesizes high-quality character samples using a combination of diffusion modeling and classifier guidance, along with a filtering mechanism for quality control. Their approach significantly improves recognition performance, achieving 89.2% accuracy on the AIBangla dataset, which is a notable advancement over previous benchmarks.
 
-### 8. Beyond Pairs: Your Language Model is Secretly Optimizing a Preference Graph
-**Authors:** Ning Liu, Chuanneng Sun, Kristina Klinkner, Shervin Malmasi
-**Link:** https://arxiv.org/abs/2605.08037v1
-**Summary:** The paper addresses the limitations of pairwise preference comparisons in aligning language models, which often overlook the richer preference structures present in training data. The authors propose Graph Direct Preference Optimization (GraphDPO), a method that utilizes directed acyclic preference graphs to optimize language model alignment more effectively. Their experiments show that this approach enhances performance in various tasks, demonstrating that leveraging graph structures for preference modeling is a powerful alternative to traditional methods.
+### 8. Shepherd: A Runtime Substrate Empowering Meta-Agents with a Formalized Execution Trace
+**Authors:** Simon Yu, Derek Chong, Ananjan Nandi, Dilara Soylu, Jiuding Sun, Christopher D Manning, Weiyan Shi
+**Link:** https://arxiv.org/abs/2605.10913v1
+**Summary:** The paper presents Shepherd, a functional programming model designed to enhance the efficiency and effectiveness of meta-agents through a structured framework for recording and replaying interactions with their environment. By utilizing a Git-like execution trace, Shepherd enables rapid forking and replay of agent processes, resulting in significant performance improvements across various applications, such as increasing coding pass rates and optimizing exploration strategies in reinforcement learning. The system is open-sourced to facilitate ongoing research in this area.
 
-### 9. Don't Get Your Kroneckers in a Twist: Gaussian Processes on High-Dimensional Incomplete Grids
-**Authors:** Mads Greisen Højlund, August Smart Lykke-Møller, Henry Moss, Ove Christiansen
-**Link:** https://arxiv.org/abs/2605.08036v1
-**Summary:** The paper presents CUTS-GPR, a novel approach for efficient Gaussian process regression in high-dimensional spaces where traditional methods struggle due to computational demands. By utilizing an additive kernel and an incomplete grid, CUTS-GPR achieves rapid kernel matrix-vector products, enabling effective modeling of complex data sets with billions of points and thousands of dimensions. The method successfully allows for fast and accurate Bayesian modeling of potential energy surfaces in computational chemistry, addressing a significant challenge in the field.
+### 9. WildClawBench: A Benchmark for Real-World, Long-Horizon Agent Evaluation
+**Authors:** Shuangrui Ding, Xuanlang Dai, Long Xing, Shengyuan Ding, Ziyu Liu, Yang JingYi, Penghui Yang, Zhixiong Zhang, Xilin Wei, Xinyu Fang, Yubo Ma, Haodong Duan, Jing Shao, Jiaqi Wang, Dahua Lin, Kai Chen, Yuhang Zang
+**Link:** https://arxiv.org/abs/2605.10912v1
+**Summary:** The paper introduces WildClawBench, a benchmark designed to assess the performance of AI agents in realistic, long-horizon tasks within their actual runtime environments, moving away from traditional synthetic benchmarks. It features 60 bilingual tasks that run in a Docker container with real command-line interfaces, incorporating both deterministic and semantic evaluation methods. The key finding reveals that even leading models like Claude Opus 4.7 only achieve a 62.2% success rate, indicating significant challenges in effectively evaluating agent performance over extended tasks.
 
-### 10. PropSplat: Map-Free RF Field Reconstruction via 3D Gaussian Propagation Splatting
-**Authors:** William Bjorndahl, Maninder Pal Singh, Farhad Nouri, Joseph Camp
-**Link:** https://arxiv.org/abs/2605.08035v1
-**Summary:** The paper addresses the challenge of creating accurate radio frequency (RF) propagation models without relying on detailed geographic maps or extensive measurement campaigns, which are often prohibitively expensive. The authors introduce PropSplat, a method that utilizes 3D Gaussian primitives to reconstruct RF fields by optimizing path loss over observed transmitter-receiver paths. This approach significantly outperforms existing methods in both outdoor and indoor scenarios, demonstrating that effective RF modeling can be achieved from sparse data without the need for comprehensive geographic information.
+### 10. Equivariant Reinforcement Learning for Clifford Quantum Circuit Synthesis
+**Authors:** Richie Yeung, Aleks Kissinger, Rob Cornish
+**Link:** https://arxiv.org/abs/2605.10910v1
+**Summary:** The paper addresses the challenge of synthesizing Clifford quantum circuits, which are crucial for quantum computing, particularly in fully connected qubit systems. The authors developed a reinforcement learning approach using a specially designed neural network that can adapt to different qubit configurations. Their key contribution is an agent that can efficiently find near-optimal or optimal circuit solutions for qubits, demonstrating significantly better performance than existing synthesis methods even for larger circuits.
