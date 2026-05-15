@@ -319,3 +319,56 @@ Automatically generated daily summaries of recent ArXiv papers.
 **Authors:** Gordan Prastalo, Kevin Maik Jablonka
 **Link:** https://arxiv.org/abs/2605.13826v1
 **Summary:** The paper addresses the issue of "cross-sample prediction churn" in scientific machine learning, where different models trained on the same dataset produce conflicting predictions for a significant number of test samples. The authors introduce two data-driven approaches to reduce this churn: $K$-bootstrap bagging, which significantly lowers churn rates without sacrificing accuracy, and a novel method called twin-bootstrap, which further decreases churn by applying a consistency loss between predictions of two jointly trained networks. The key contribution is demonstrating that these methods can effectively mitigate prediction inconsistencies, highlighting the importance of reporting churn alongside predictive performance in benchmarks.
+
+---
+## 2026-05-15
+
+### 1. EntityBench: Towards Entity-Consistent Long-Range Multi-Shot Video Generation
+**Authors:** Ruozhen He, Meng Wei, Ziyan Yang, Vicente Ordonez
+**Link:** https://arxiv.org/abs/2605.15199v1
+**Summary:** The paper addresses the challenge of maintaining consistency of characters, objects, and locations in long multi-shot video generation. It introduces EntityBench, a benchmark with detailed entity tracking across a variety of narrative scenarios, and proposes EntityMem, a memory-augmented system that improves consistency by storing visual references for entities. The results demonstrate that using explicit per-entity memory significantly enhances character fidelity and presence in generated videos.
+
+### 2. ATLAS: Agentic or Latent Visual Reasoning? One Word is Enough for Both
+**Authors:** Ziyu Guo, Rain Liu, Xinyan Chen, Pheng-Ann Heng
+**Link:** https://arxiv.org/abs/2605.15198v1
+**Summary:** The paper presents ATLAS, a novel framework that combines agentic and latent visual reasoning using a single discrete 'functional token', which simplifies the process and avoids the complexities and inefficiencies of generating intermediate visual content. By allowing these tokens to operate without visual supervision and ensuring compatibility with existing training methods, ATLAS enhances performance on visual reasoning tasks while maintaining interpretability. The introduction of Latent-Anchored GRPO further improves training stability by providing stronger gradient updates, ultimately leading to superior results on challenging benchmarks.
+
+### 3. RefDecoder: Enhancing Visual Generation with Conditional Video Decoding
+**Authors:** Xiang Fan, Yuheng Wang, Bohan Fang, Zhongzheng Ren, Ranjay Krishna
+**Link:** https://arxiv.org/abs/2605.15196v1
+**Summary:** The paper addresses the issue of detail loss and inconsistency in video generation caused by decoders that lack sufficient conditioning on input images. It introduces RefDecoder, a video decoder that enhances quality by integrating high-fidelity reference images into the decoding process using reference attention. This approach significantly improves performance, achieving up to +2.1dB PSNR on various benchmarks and demonstrating better subject and background consistency in generated videos.
+
+### 4. FutureSim: Replaying World Events to Evaluate Adaptive Agents
+**Authors:** Shashwat Goel, Nikhil Chandak, Arvindh Arun, Ameya Prabhu, Steffen Staab, Moritz Hardt, Maksym Andriushchenko, Jonas Geiping
+**Link:** https://arxiv.org/abs/2605.15188v1
+**Summary:** The paper addresses the challenge of evaluating AI agents' ability to adapt to new information in dynamic environments by introducing FutureSim, a simulation that replays real-world events chronologically. This approach allows agents to forecast future events while interacting with a timeline of actual news and resolutions. The key finding reveals significant variability in agents' predictive capabilities, with the best performing agent achieving only 25% accuracy, highlighting the need for improved methods in long-term adaptation and reasoning under uncertainty.
+
+### 5. VGGT-Edit: Feed-forward Native 3D Scene Editing with Residual Field Prediction
+**Authors:** Kaixin Zhu, Yiwen Tang, Yifan Yang, Renrui Zhang, Bohan Zeng, Ziyu Guo, Ruichuan An, Zhou Liu, Qizhi Chen, Delin Qu, Jaehong Yoon, Wentao Zhang
+**Link:** https://arxiv.org/abs/2605.15186v1
+**Summary:** The paper presents VGGT-Edit, a novel framework for editing 3D scenes in response to text instructions without the need for traditional 2D editing methods, which often lead to poor visual quality. By using depth-synchronized text injection and a residual transformation head, it predicts direct 3D changes while maintaining consistent geometry and detail. Experiments demonstrate that VGGT-Edit significantly outperforms existing methods, providing sharper details and greater consistency across multiple views.
+
+### 6. Quantitative Video World Model Evaluation for Geometric-Consistency
+**Authors:** Jiaxin Wu, Yihao Pi, Yinling Zhang, Yuheng Li, Xueyan Zou
+**Link:** https://arxiv.org/abs/2605.15185v1
+**Summary:** The paper addresses the challenge of evaluating the geometric consistency of generative video models, as existing methods often rely on subjective judgments. The authors propose a quantitative framework called PDI-Bench, which assesses geometric coherence by analyzing 3D structural and motion characteristics using projective-geometry residuals. The key contribution is the introduction of systematic and objective metrics that reveal geometric failure modes in generated videos, which are not captured by traditional perceptual assessments, thereby advancing the evaluation of realistic video generation.
+
+### 7. Is Grep All You Need? How Agent Harnesses Reshape Agentic Search
+**Authors:** Sahil Sen, Akhil Kasturi, Elias Lumer, Anmol Gulati, Vamse Kumar Subbiah
+**Link:** https://arxiv.org/abs/2605.15184v1
+**Summary:** This paper investigates the effectiveness of different information retrieval strategies in enhancing the performance of Large Language Model (LLM) agents during complex search tasks. It empirically compares traditional grep-based searching against vector retrieval methods across various agent harnesses. The key finding is that grep generally outperforms vector retrieval in accuracy, but results vary significantly based on the specific agent architecture and tool-calling approach used.
+
+### 8. When Are Two Networks the Same? Tensor Similarity for Mechanistic Interpretability
+**Authors:** ML Nissen Gonzalez, Melwina Albuquerque, Laurence Wroe, Jacob Meyer Cohen, Logan Riggs Smith, Thomas Dooms
+**Link:** https://arxiv.org/abs/2605.15183v1
+**Summary:** The paper addresses the challenge of determining when two neural network components perform the same computation, which is crucial for understanding their functionality. It introduces a new metric called tensor similarity that is invariant to weight-space symmetries and effectively measures the global equivalence of tensor-based models. The authors demonstrate that this metric better tracks functional training dynamics compared to existing similarity measures, simplifying the assessment of network similarity and interpretability.
+
+### 9. Eradicating Negative Transfer in Multi-Physics Foundation Models via Sparse Mixture-of-Experts Routing
+**Authors:** Ellwil Sharma, Arastu Sharma
+**Link:** https://arxiv.org/abs/2605.15179v1
+**Summary:** The paper addresses the challenge of negative transfer in multi-physics foundation models, where training on diverse physical regimes can lead to optimization issues. The authors propose Shodh-MoE, a sparse mixture-of-experts architecture that dynamically routes data to specialized subnetworks based on physical mechanisms, while ensuring mass conservation in fluid dynamics. They demonstrate that this approach allows the model to train effectively across different physical domains, achieving low mean squared errors in validation metrics.
+
+### 10. OpenDeepThink: Parallel Reasoning via Bradley--Terry Aggregation
+**Authors:** Shang Zhou, Wenhao Chai, Kaiyuan Liu, Huanzhi Mao, Qiuyang Mang, Jingbo Shang
+**Link:** https://arxiv.org/abs/2605.15177v1
+**Summary:** The paper presents OpenDeepThink, a framework designed to enhance the reasoning capabilities of large language models (LLMs) during test-time by using parallel candidate evaluation and selection. It employs a pairwise comparison method based on the Bradley-Terry model to rank multiple reasoning outputs and improve selection efficiency without ground-truth supervision. The key result shows a significant boost in performance—specifically, an increase of 405 Elo points for the Gemini 3.1 Pro model in competitive programming tasks, with the approach demonstrating effective transferability across various model strengths.
