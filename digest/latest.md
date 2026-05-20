@@ -1,52 +1,52 @@
 ---
-## 2026-05-19
+## 2026-05-20
 
-### 1. DashAttention: Differentiable and Adaptive Sparse Hierarchical Attention
-**Authors:** Yuxiang Huang, Nuno M. T. Gonçalves, Federico Alvetreti, Lei Li, Xu Han, Edoardo M. Ponti, André F. T. Martins, Marcos V. Treviso
-**Link:** https://arxiv.org/abs/2605.18753v1
-**Summary:** The paper presents DashAttention, a novel hierarchical attention mechanism that addresses the limitations of existing methods by allowing for a variable number of key-value blocks to be selected adaptively based on the query. This approach maintains a fully differentiable architecture, resulting in improved long-context modeling capabilities and better performance than current methods like NSA and InfLLMv2, particularly in high-sparsity scenarios. Additionally, DashAttention's implementation shows significant speed improvements during inference compared to previous attention techniques.
+### 1. Atoms of Thought: Universal EEG Representation Learning with Microstates
+**Authors:** Xinyang Tian, Ruitao Liu, Ziyi Ye, Siyang Xue, Xin Wang, Xuesong Chen
+**Link:** https://arxiv.org/abs/2605.20182v1
+**Summary:** This paper addresses the challenge of effectively representing electroencephalogram (EEG) signals for various applications like sleep staging and emotion recognition. The authors introduce a novel method that uses microstates—short patterns of brain activity—by clustering EEG data into discrete sequences. Their findings demonstrate that this microstate approach significantly improves performance over traditional methods and provides better interpretability and scalability for both research and clinical applications.
 
-### 2. A Readiness-Driven Runtime for Pipeline-Parallel Training under Runtime Variability
-**Authors:** Ruitao Liu, Xinyang Tian, Shuo Chen, Tingrui Zhang, Guang Yang, Alan Zhao, Wei Xu
-**Link:** https://arxiv.org/abs/2605.18750v1
-**Summary:** The paper addresses the inefficiencies in pipeline-parallel training caused by runtime variability, where models may wait for unready tasks, leading to idle time and suboptimal resource usage. It introduces the Runtime-Readiness-First Pipeline (RRFP), which allows for more flexible scheduling based on task readiness rather than rigid predefined orders. The key contribution is that RRFP significantly enhances training speed, achieving up to 1.77 times faster performance on language tasks and up to 2.77 times on multimodal tasks compared to traditional methods, while maintaining training correctness.
+### 2. TIDE: Efficient and Lossless MoE Diffusion LLM Inference with I/O-aware Expert Offload
+**Authors:** Zhiben Chen, Youpeng Zhao, Yang Sui, Jun Wang, Yuzhang Shang
+**Link:** https://arxiv.org/abs/2605.20179v1
+**Summary:** The paper presents TIDE, a new system designed to optimize the inference of large diffusion language models (dLLMs) on resource-limited devices by reducing input/output (I/O) overhead and computational bottlenecks. TIDE utilizes the consistency of expert activations during the diffusion process to develop an interval-based strategy that efficiently manages expert placements, formulated as a mathematical problem to minimize resource use. As a result, it achieves up to 1.5 times the throughput of existing methods without requiring any additional model training.
 
-### 3. Code as Agent Harness
-**Authors:** Xuying Ning, Katherine Tieu, Dongqi Fu, Tianxin Wei, Zihao Li, Yuanchen Bei, Jiaru Zou, Mengting Ai, Zhining Liu, Ting-Wei Li, Lingjie Chen, Yanjun Zhao, Ke Yang, Bingxuan Li, Cheng Qian, Gaotang Li, Xiao Lin, Zhichen Zeng, Ruizhong Qiu, Sirui Chen, Yifan Sun, Xiyuan Yang, Ruida Wang, Rui Pan, Chenyuan Yang, Dylan Zhang, Liri Fang, Zikun Cui, Yang Cao, Pan Chen, Dorothy Sun, Ren Chen, Mahesh Srinivasan, Nipun Mathur, Yinglong Xia, Hong Li, Hong Yan, Pan Lu, Lingming Zhang, Tong Zhang, Hanghang Tong, Jingrui He
-**Link:** https://arxiv.org/abs/2605.18747v1
-**Summary:** The paper addresses the evolving role of code in agentic systems, where it functions not only as output but also as a foundational element for agent reasoning and actions. The authors introduce the concept of "code as agent harness," organizing their survey into three layers: the interaction between code and agents, the mechanisms that improve performance, and the scaling of these systems to multi-agent environments. Their key contribution is a comprehensive framework for understanding and developing AI agents that can reliably execute complex tasks using code, while also identifying important challenges for future research in this area.
+### 3. From Seeing to Thinking: Decoupling Perception and Reasoning Improves Post-Training of Vision-Language Models
+**Authors:** Juncheng Wu, Hardy Chen, Haoqin Tu, Xianfeng Tang, Freda Shi, Hui Liu, Hanqing Lu, Cihang Xie, Yuyin Zhou
+**Link:** https://arxiv.org/abs/2605.20177v1
+**Summary:** The paper addresses the performance limitations of vision-language models (VLMs) in visual tasks, emphasizing that poor visual perception, rather than reasoning, is the main issue. The authors propose a staged training approach, separating visual perception, visual reasoning, and textual reasoning, and demonstrate that targeted optimization of visual perception enhances overall performance. Their results indicate that models trained with this method achieve significantly improved accuracy in reasoning tasks with shorter reasoning processes, highlighting the importance of strong visual perception as a foundation for effective reasoning.
 
-### 4. ESI-Bench: Towards Embodied Spatial Intelligence that Closes the Perception-Action Loop
-**Authors:** Yining Hong, Jiageng Liu, Han Yin, Manling Li, Leonidas Guibas, Li Fei-Fei, Jiajun Wu, Yejin Choi
-**Link:** https://arxiv.org/abs/2605.18746v1
-**Summary:** The paper introduces ESI-Bench, a new benchmark designed to evaluate embodied spatial intelligence by mimicking how agents actively explore their environments instead of simply processing observations passively. Through extensive experimentation with state-of-the-art models, the authors found that agents using active exploration techniques significantly outperform those that rely on passive sensing, discovering effective spatial strategies on their own. A notable challenge identified is that many errors arise not from perception issues but from poor action choices, highlighting a gap in metacognitive reasoning compared to human strategies.
+### 4. ClinSeekAgent: Automating Multimodal Evidence Seeking for Agentic Clinical Reasoning
+**Authors:** Juncheng Wu, Letian Zhang, Yuhan Wang, Haoqin Tu, Hardy Chen, Zijun Wang, Cihang Xie, Yuyin Zhou
+**Link:** https://arxiv.org/abs/2605.20176v1
+**Summary:** The paper introduces ClinSeekAgent, an automated system designed to actively gather and synthesize multimodal clinical evidence, moving away from the typical reliance on pre-curated data. By querying various medical data sources and refining its hypotheses in real-time, ClinSeekAgent significantly improves the performance of language models in clinical reasoning tasks, achieving notable F1 score enhancements on both text-only and multimodal challenges. Additionally, it serves as a training pipeline for creating more efficient models capable of effective evidence seeking.
 
-### 5. SURGE: Approximation-free Training Free Particle Filter for Diffusion Surrogate
-**Authors:** Lifu Wei, Yinuo Ren, Naichen Shi, Yiping Lu
-**Link:** https://arxiv.org/abs/2605.18745v1
-**Summary:** The paper addresses the challenge of improving sample quality in diffusion-based generative models during inference without incurring high computational costs or introducing bias from gradient evaluations. It introduces a new algorithm called \texttt{URGE}, which utilizes a resampling technique based on Girsanov estimation, allowing for effective weight adjustments of simulated trajectories without the need for score calculations. The key contribution is that \texttt{URGE} demonstrates improved generation quality compared to existing methods while being easier to implement and completely free of gradient-based computations.
+### 5. Multi-axis Analysis of Image Manipulation Localization
+**Authors:** Keanu Nichols, Divya Appapogu, Giscard Biamby, Dina Bashkirova, Anna Rohrbach, Bryan A. Plummer
+**Link:** https://arxiv.org/abs/2605.20174v1
+**Summary:** The paper addresses the challenge of detecting advanced image manipulations, which have become increasingly prevalent due to generative AI but can contribute to misinformation. The authors introduce a new benchmark called AUDITS, which includes over 530,000 images across various domains, manipulation types, and sizes, facilitating a multi-axis analysis of detection methods. Their research aims to enhance the understanding of existing techniques' robustness and drive the development of more effective image manipulation detection tools.
 
-### 6. Actionable World Representation
-**Authors:** Kunqi Xu, Jitao Li, Jianglong Ye, Tianshu Tang, Isabella Liu, Sifei Liu, Xueyan Zou
-**Link:** https://arxiv.org/abs/2605.18743v1
-**Summary:** The paper addresses the challenge of creating a unified representation of actionable objects in the physical world, which are typically dynamic and change states based on their properties. The authors introduce WorldString, a neural architecture that learns from point clouds or RGB-D video streams to model the state of real-world objects effectively. This framework serves as a versatile digital twin, laying the groundwork for more advanced physical world models and facilitating future integration with policy learning and neural dynamics.
+### 6. A Methodology for Selecting and Composing Runtime Architecture Patterns for Production LLM Agents
+**Authors:** Vasundra Srinivasan
+**Link:** https://arxiv.org/abs/2605.20173v1
+**Summary:** The paper addresses the challenges of integrating stochastic outputs from large language models (LLMs) with deterministic software systems in the context of production agents, introducing the concept of the stochastic-deterministic boundary (SDB) as a key architectural component. It presents a methodology and a catalog of six runtime patterns for effectively composing the SDB across different types of agents, along with strategies for diagnosing failures. A notable contribution is the five-step method for selecting suitable runtime patterns based on workload characteristics, which is demonstrated through a practical implementation for managing contract renewals.
 
-### 7. Vision-OPD: Learning to See Fine Details for Multimodal LLMs via On-Policy Self-Distillation
-**Authors:** Qianhao Yuan, Jie Lou, Xing Yu, Hongyu Lin, Le Sun, Xianpei Han, Yaojie Lu
-**Link:** https://arxiv.org/abs/2605.18740v1
-**Summary:** The paper addresses the challenge that multimodal large language models (MLLMs) face in understanding fine details in images, particularly when answers depend on small pieces of visual evidence. The authors introduce a self-distillation framework called Vision-OPD, which allows the model to leverage its own focused perceptions of cropped images to improve its performance on full images. Their experiments demonstrate that models trained with Vision-OPD achieve competitive or superior results in fine-grained visual understanding tasks compared to larger existing models.
+### 7. Long-term Power Grid Planning via Answer Set Programming
+**Authors:** Antonio Ielo, Francesco Doria, Sandra Castellanos-Paez, Marco Maratea, Francesco Percassi, Mauro Vallati
+**Link:** https://arxiv.org/abs/2605.20172v1
+**Summary:** This paper addresses the challenge of long-term power grid planning, which must adapt to sustainability, demand changes, and urbanization while maintaining service quality. The authors introduce a novel approach using Answer Set Programming (ASP) to automate and optimize this planning process, demonstrating its capability to effectively handle complex grid requirements through both synthetic and real-world data evaluations. The key contribution is the successful application of ASP to express and manage intricate topological and combinatorial constraints in grid planning.
 
-### 8. What Does the AI Doctor Value? Auditing Pluralism in the Clinical Ethics of Language Models
-**Authors:** Payal Chandak, Victoria Alkin, David Wu, Maya Dagan, Taposh Dutta Roy, Maria Clara Saad Menezes, Ayush Noori, Nirali Somia, John S. Brownstein, Ran Balicer, Rebecca W. Brendel, Noa Dagan, Isaac S. Kohane, Gabriel A. Brat
-**Link:** https://arxiv.org/abs/2605.18738v1
-**Summary:** This paper addresses the issue of how large language models (LLMs) in medicine may not adequately consider the diverse ethical values that physicians prioritize, particularly in cases of conflicting principles like patient autonomy. The authors propose a framework to audit the ethical values embedded in medical AI by analyzing clinician-verified dilemmas and determining how LLMs prioritize different ethical considerations in their decisions. They found that while LLMs exhibit some understanding of value pluralism, they often lean towards specific value preferences, which could lead to rigid ethical stances in clinical practice if not managed appropriately.
+### 8. KoRe: Compact Knowledge Representations for Large Language Models
+**Authors:** Davide Cavicchini, Fausto Giunchiglia, Jacopo Staiano
+**Link:** https://arxiv.org/abs/2605.20170v1
+**Summary:** The paper introduces KoRe, a new method for improving Large Language Models (LLMs) by integrating human-readable Knowledge Graphs (KGs) in a more efficient way. Instead of retraining the entire model, KoRe encodes sub-graphs into compact knowledge tokens that can be easily injected into the LLM, achieving competitive performance on benchmarks while significantly reducing token usage by up to 10 times. This approach enhances the interpretability and reliability of LLMs, addressing issues with knowledge representation and hallucinations.
 
-### 9. PIXLRelight: Controllable Relighting via Intrinsic Conditioning
-**Authors:** Miguel Farinha, Ronald Clark
-**Link:** https://arxiv.org/abs/2605.18735v1
-**Summary:** The paper introduces PIXLRelight, a fast and effective method for relighting single images with physical accuracy by using a novel intrinsic conditioning technique. This approach combines principles from physically based rendering with learned image synthesis, allowing users to control lighting in a highly detailed manner without the computational overhead typically associated with traditional methods. The key contribution is its ability to achieve high-quality relighting in under a tenth of a second per image, setting a new standard for this application.
+### 9. HaorFloodAlert: Deseasonalized ML Ensemble for 72-Hour Flood Prediction in Bangladesh Haor Wetlands
+**Authors:** Salma Hoque Talukdar Koli, Fahima Haque Talukder Jely, Md. Samiul Alim, Md. Zakir Hossen
+**Link:** https://arxiv.org/abs/2605.20167v1
+**Summary:** The paper addresses the problem of rapid flash floods in Bangladesh's haor wetlands, which threaten the annual boro rice harvest and are poorly predicted by current flood forecasting systems. The authors developed HaorFloodAlert, a deseasonalized machine learning ensemble that accurately forecasts flood probabilities by incorporating data on temperature and upstream river conditions. Their ensemble model achieves high predictive accuracy, with significant validation results that aim to improve flood warning capabilities and mitigate agricultural damage.
 
-### 10. Predictable Confabulations: Factual Recall by LLMs Scales with Model Size and Topic Frequency
-**Authors:** Matthew L. Smith, Jonathan P. Shock, Samuel T. Segun, Iyiola E. Olatunji, Tegawendé F. Bissyandé
-**Link:** https://arxiv.org/abs/2605.18732v1
-**Summary:** This paper investigates how well large language models (LLMs) can recall factual information based on their size and the frequency of topics in their training data. By evaluating 38 models on a substantial dataset of scholarly references, the authors found that a combination of model size and topic representation explains a significant portion of the variance in recall quality. The key insight is that recall performance follows a predictable pattern influenced by the strength of relevant information relative to background noise, suggesting a scalable approach to improve factual recall in LLMs.
+### 10. Not Every Rubric Teaches Equally: Policy-Aware Rubric Rewards for RLVR
+**Authors:** Utkarsh Tyagi, Xingang Guo, MohammadHossein Rezaei, Daniel George, Anas Mahmoud, Jackson Lee, Bing Liu, Yunzhong He
+**Link:** https://arxiv.org/abs/2605.20164v1
+**Summary:** The paper addresses the challenge of optimizing reinforcement learning with rubric-based rewards, where certain criteria may not be effective signals for improving model performance. The authors propose POW3R, a policy-aware reward framework that adjusts the importance of rubric criteria based on their current relevance during training, enhancing the learning process. The key result shows that POW3R significantly improves both overall reward and completion rates while requiring fewer training steps compared to traditional methods.
