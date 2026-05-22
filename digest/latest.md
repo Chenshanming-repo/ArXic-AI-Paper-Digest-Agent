@@ -1,52 +1,52 @@
 ---
-## 2026-05-21
+## 2026-05-22
 
-### 1. Variance Reduction for Expectations with Diffusion Teachers
-**Authors:** Jesse Bettencourt, Xindi Wu, Matan Atzmon, James Lucas, Jonathan Lorraine
-**Link:** https://arxiv.org/abs/2605.21489v1
-**Summary:** The paper addresses the problem of high computational costs associated with using pretrained diffusion models in downstream tasks, due to the variability of Monte Carlo estimates from noise samples. To tackle this, the authors introduce CARV, a framework that reduces variance in these estimates by employing a hierarchical Monte Carlo approach that allows for more efficient reuse of expensive computations combined with importance sampling techniques. The key contribution is that CARV significantly improves computational efficiency, achieving 2-3x effective compute savings in various experiments, although it does not enhance performance in all scenarios.
+### 1. Tokenisation via Convex Relaxations
+**Authors:** Jan Tempus, Philip Whittington, Craig W. Schmidt, Dennis Komm, Tiago Pimentel
+**Link:** https://arxiv.org/abs/2605.22821v1
+**Summary:** The paper addresses the limitations of existing greedy tokenisation algorithms in natural language processing by proposing a new approach called ConvexTok, which formulates the tokeniser construction as a linear program solved through convex optimisation. The key contributions include consistent improvements in tokenisation metrics and language model efficiency, with ConvexTok providing users a certified measure of optimality for the tokenisers created, demonstrating performance within 1% of the optimal solution at standard vocabulary sizes.
 
-### 2. Equilibrium Reasoners: Learning Attractors Enables Scalable Reasoning
-**Authors:** Benhao Huang, Zhengyang Geng, Zico Kolter
-**Link:** https://arxiv.org/abs/2605.21488v1
-**Summary:** The paper addresses the challenge of enabling iterative reasoning models to generalize effectively beyond memorized patterns. The authors introduce Equilibrium Reasoners (EqR), which leverage learned dynamical systems that stabilize at solution points, allowing for scaling of reasoning processes during inference. Their approach significantly enhances performance in challenging tasks, such as solving complex Sudoku puzzles, where accuracy improved from 2.6% to over 99% by effectively utilizing test-time computation.
+### 2. Integrable Elasticity via Neural Demand Potentials
+**Authors:** Carlos Heredia, Daniel Roncel
+**Link:** https://arxiv.org/abs/2605.22820v1
+**Summary:** The paper addresses the challenge of accurately modeling multiproduct retail demand and deriving elasticities from it. The authors introduce a novel neural model called the Integrable Context-Dependent Demand Network (ICDN), which learns demand as a smooth function influenced by various contexts and log-prices. The key finding is that ICDN significantly enhances predictive performance and provides more reliable elasticity estimates compared to traditional methods, particularly for complex cross-price relationships.
 
-### 3. Quantifying Hyperparameter Transfer and the Importance of Embedding Layer Learning Rate
-**Authors:** Dayal Singh Kalra, Maissam Barkeshli
-**Link:** https://arxiv.org/abs/2605.21486v1
-**Summary:** The paper addresses the challenge of transferring optimal hyperparameters when training large language models (LLMs) across different scales. The authors propose a framework to quantify hyperparameter transfer and demonstrate that the "Maximal Update" (μP) approach significantly enhances learning rate transfer compared to standard parameterization. A key finding is that optimizing the embedding layer's learning rate reduces training instability and improves hyperparameter transfer effectiveness.
+### 3. Vector Policy Optimization: Training for Diversity Improves Test-Time Search
+**Authors:** Ryan Bahlous-Boldi, Isha Puri, Idan Shenfeld, Akarsh Kumar, Mehul Damani, Sebastian Risi, Omar Khattab, Zhang-Wei Hong, Pulkit Agrawal
+**Link:** https://arxiv.org/abs/2605.22817v1
+**Summary:** The paper addresses the challenge of training language models to generate diverse solutions that can adapt to various task-specific reward functions during inference. The authors introduce Vector Policy Optimization (VPO), a reinforcement learning algorithm that allows models to anticipate and optimize for diverse rewards rather than a single scalar reward, improving their ability to explore different solutions. The results show that VPO consistently outperforms traditional approaches in test-time search scenarios, particularly as the search budget increases, highlighting the importance of optimizing for diversity in model training.
 
-### 4. EvoStruct: Bridging Evolutionary and Structural Priors for Antibody CDR Design via Protein Language Model Adaptation
-**Authors:** Mansoor Ahmed, Sujin Lee, Umar Khayaz, Murray Patterson
-**Link:** https://arxiv.org/abs/2605.21485v1
-**Summary:** The paper introduces EvoStruct, a novel method for antibody CDR design that tackles the problem of vocabulary collapse in existing graph neural networks, which tend to over-predict certain amino acids while missing important ones. By integrating a frozen protein language model with 3D structural information through a cross-attention mechanism, EvoStruct significantly improves sequence recovery and amino acid diversity. The results show a 16% increase in sequence recovery and a 43% reduction in perplexity compared to leading GNN methods, aligning more closely with known binding correlations.
+### 4. Remember to be Curious: Episodic Context and Persistent Worlds for 3D Exploration
+**Authors:** Lily Goli, Justin Kerr, Daniele Reda, Alec Jacobson, Andrea Tagliasacchi, Angjoo Kanazawa
+**Link:** https://arxiv.org/abs/2605.22814v1
+**Summary:** The paper addresses the challenge of effective exploration in sparse-reward 3D environments, where agents often get stuck revisiting old states. The authors propose a method that combines a continuously updated 3D reconstruction of the environment with an episodic policy model that tracks past experiences, allowing the agent to efficiently discover new areas. This approach leads to superior exploration performance during training and successful adaptation to various tasks in unseen environments, outpacing traditional reinforcement learning techniques.
 
-### 5. Velocityformer: Broken-Symmetry-Matched Equivariant Graph Transformers for Cosmological Velocity Reconstruction
-**Authors:** Tilman Tröster, David Mirkovic, Veronika Oehl, Arne Thomsen
-**Link:** https://arxiv.org/abs/2605.21483v1
-**Summary:** The paper presents Velocityformer, a novel graph transformer model designed to accurately reconstruct galaxy velocities from spectroscopic surveys to enhance measurements of the kinematic Sunyaev-Zel'dovich (kSZ) effect, which informs cosmological theories. By aligning the model with the broken symmetry in observational data, Velocityformer achieves a 35% improvement in accuracy over traditional methods and demonstrates enhanced performance even with limited training data, ultimately improving the signal-to-noise ratio in kSZ measurements by 30%.
+### 5. The Matching Principle: A Geometric Theory of Loss Functions for Nuisance-Robust Representation Learning
+**Authors:** Vishal Rajput
+**Link:** https://arxiv.org/abs/2605.22800v1
+**Summary:** This paper addresses the challenge of ensuring robustness in machine learning by proposing a unified approach called the "matching principle," which focuses on estimating the covariance of nuisance factors that do not affect labels and using this to regularize models. The authors demonstrate that various existing techniques, like adversarial training and metric learning, can be viewed as different methods for achieving this goal. A key contribution is the introduction of the Trajectory Deviation Index (TDI) for assessing sensitivity in embeddings and providing closed-form results that validate their theoretical framework with empirical tests across multiple models.
 
-### 6. DeepWeb-Bench: A Deep Research Benchmark Demanding Massive Cross-Source Evidence and Long-Horizon Derivation
-**Authors:** Sixiong Xie, Zhuofan Shi, Haiyang Shen, Jiuzheng Wang, Siqi Zhong, Mugeng Liu, Chongyang Pan, Peilun Jia, Baoqing Sun, Xiang Jing, Yun Ma
-**Link:** https://arxiv.org/abs/2605.21482v1
-**Summary:** The paper introduces DeepWeb-Bench, a challenging benchmark for evaluating language models on deep research tasks that require extensive evidence gathering, cross-source verification, and complex multi-step reasoning. The benchmark reveals that most errors arise from issues in deriving and calibrating answers rather than retrieving information, highlighting distinct failure modes between strong and weak models, and showing that models perform differently across domains. The publicly available benchmark includes data and evaluation tools for further research.
+### 6. Finite-Particle Convergence Rates for Conservative and Non-Conservative Drifting Models
+**Authors:** Krishnakumar Balasubramanian
+**Link:** https://arxiv.org/abs/2605.22795v1
+**Summary:** This paper addresses the convergence rates of finite-particle simulations for generative modeling that use drifting methods, particularly focusing on correcting issues related to non-conservatism in drifting velocities. The authors propose a new conservative drifting method using kernel density estimator gradients, proving that this approach achieves improved convergence rates under certain conditions. Key results include explicit bounds for the method's performance, demonstrating that it can effectively control residual terms while maintaining accurate generation of data.
 
-### 7. AiraXiv: An AI-Driven Open-Access Platform for Human and AI Scientists
-**Authors:** Junshu Pan, Panzhong Lu, Yixuan Weng, Qiyao Sun, Fang Guo, Zijie Yang, Qiji Zhou, Yue Zhang
-**Link:** https://arxiv.org/abs/2605.21481v1
-**Summary:** The paper presents AiraXiv, an AI-driven open-access platform designed to tackle the challenges faced by traditional academic publishing, such as increasing submission volumes and reviewer workload. AiraXiv enables both human and AI authors to contribute and refine research through iterative feedback and AI-assisted analysis, promoting a more inclusive and scalable approach to publishing. The platform was validated through real-world applications, showing its effectiveness as a modern research infrastructure.
+### 7. MOSS: Self-Evolution through Source-Level Rewriting in Autonomous Agent Systems
+**Authors:** Qianshu Cai, Yonggang Zhang, Xianzhang Jia, Wei Xue, Jun Song, Xinmei Tian, Yike Guo
+**Link:** https://arxiv.org/abs/2605.22794v1
+**Summary:** The paper addresses the limitations of current autonomous agent systems, which cannot adapt or learn from user interactions after deployment. The authors propose MOSS, a self-evolving system that enables source-level code rewriting to address structural failures, utilizing feedback from production failures for improvement. Remarkably, MOSS improved performance on the OpenClaw benchmark by enhancing task completion scores significantly, all without requiring human intervention.
 
-### 8. WikiVQABench: A Knowledge-Grounded Visual Question Answering Benchmark from Wikipedia and Wikidata
-**Authors:** Basel Shbita, Pengyuan Li, Anna Lisa Gentile
-**Link:** https://arxiv.org/abs/2605.21479v1
-**Summary:** The paper introduces WikiVQABench, a new benchmark for Visual Question Answering (VQA) that requires external knowledge from sources like Wikipedia and Wikidata, addressing the limitation of existing benchmarks that focus only on visual content. To create this dataset, images from Wikipedia were combined with relevant captions and knowledge, and multiple-choice questions were generated using large language models and then curated by human annotators for quality and factual accuracy. The evaluation of various vision-language models on this benchmark showed a significant range in performance, highlighting its effectiveness in assessing knowledge-driven reasoning capabilities in AI systems.
+### 8. Gated DeltaNet-2: Decoupling Erase and Write in Linear Attention
+**Authors:** Ali Hatamizadeh, Yejin Choi, Jan Kautz
+**Link:** https://arxiv.org/abs/2605.22791v1
+**Summary:** The paper introduces Gated DeltaNet-2, which addresses the challenge of efficiently managing memory updates in linear attention models by separating the mechanisms for erasing old information and writing new data using distinct channel-wise gates. This approach enhances memory editing in such a way that it improves overall performance in tasks like language modeling and commonsense reasoning, particularly excelling in long-context retrieval scenarios. Gated DeltaNet-2 outperforms its predecessors and related models, achieving the best results across various benchmarks while maintaining efficient training processes.
 
-### 9. Is Fixing Schema Graphs Necessary? Full-Resolution Graph Structure Learning for Relational Deep Learning
-**Authors:** Yi Huang, Qingyun Sun, Jia Li, Xingcheng Fu, Jianxin Li
-**Link:** https://arxiv.org/abs/2605.21475v1
-**Summary:** The paper addresses the challenge of enhancing relational prediction tasks using relational deep learning by moving beyond fixed graph structures in relational databases. The authors introduce FROG, a framework that learns graph structures dynamically during the learning process by treating tables as flexible nodes and edges, while incorporating mechanisms to capture relational semantics effectively. Their experiments show that this approach outperforms existing methods and provides insightful contributions to how graph structures can be optimized for better performance in relational deep learning tasks.
+### 9. LCGuard: Latent Communication Guard for Safe KV Sharing in Multi-Agent Systems
+**Authors:** Sadia Asif, Mohammad Mohammadi Amiri, Momin Abbas, Prasanna Sattigeri, Karthikeyan Natesan Ramamurthy
+**Link:** https://arxiv.org/abs/2605.22786v1
+**Summary:** The paper presents LCGuard, a framework designed to ensure safe communication between agents in multi-agent systems that use key-value (KV) caches. LCGuard addresses the risk of sensitive information being unintentionally shared through these caches by implementing transformations that obscure reconstructions of agent-specific data while preserving essential task-related information. The results demonstrate that LCGuard effectively reduces the likelihood of sensitive information leakage compared to traditional methods, while still performing competitively on various tasks.
 
-### 10. Agent JIT Compilation for Latency-Optimizing Web Agent Planning and Scheduling
-**Authors:** Caleb Winston, Ron Yifeng Wang, Azalia Mirhoseini, Christos Kozyrakis
-**Link:** https://arxiv.org/abs/2605.21470v1
-**Summary:** The paper addresses the high latency and error rates in computer-use agents (CUA) that automate web tasks using natural language instructions by proposing an agent just-in-time (JIT) compilation method. This approach generates executable code from task descriptions, allowing for optimized tool usage and parallel execution. The results show significant improvements, with JIT-Planner achieving over 10 times faster execution and increased accuracy compared to existing methods.
+### 10. Evaluating Commercial AI Chatbots as News Intermediaries
+**Authors:** Mirac Suzgun, Emily Shen, Federico Bianchi, Alexander Spangher, Thomas Icard, Daniel E. Ho, Dan Jurafsky, James Zou
+**Link:** https://arxiv.org/abs/2605.22785v1
+**Summary:** This study evaluates the accuracy of six AI chatbots in delivering news information by testing them on 2,100 factual questions from BBC News over a two-week period. The findings reveal that while some chatbots perform well with over 90% accuracy on multiple-choice questions, their performance drops significantly on free-response questions and varies by language, particularly underperforming in Hindi. The research highlights critical issues such as reliance on English sources, challenges in retrieving accurate information, and variability in addressing subtle inaccuracies in user queries.
