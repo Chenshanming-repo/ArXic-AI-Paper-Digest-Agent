@@ -1,52 +1,52 @@
 ---
-## 2026-05-22
+## 2026-05-23
 
-### 1. Tokenisation via Convex Relaxations
-**Authors:** Jan Tempus, Philip Whittington, Craig W. Schmidt, Dennis Komm, Tiago Pimentel
-**Link:** https://arxiv.org/abs/2605.22821v1
-**Summary:** The paper addresses the limitations of existing greedy tokenisation algorithms in natural language processing by proposing a new approach called ConvexTok, which formulates the tokeniser construction as a linear program solved through convex optimisation. The key contributions include consistent improvements in tokenisation metrics and language model efficiency, with ConvexTok providing users a certified measure of optimality for the tokenisers created, demonstrating performance within 1% of the optimal solution at standard vocabulary sizes.
+### 1. DeltaBox: Scaling Stateful AI Agents with Millisecond-Level Sandbox Checkpoint/Rollback
+**Authors:** Yunpeng Dong, Jingkai He, Yuze Hou, Dong Du, Zhonghu Xu, Si Yu, Yubin Xia, Haibo Chen
+**Link:** https://arxiv.org/abs/2605.22781v1
+**Summary:** The paper addresses the latency issue in stateful AI agents that rely on frequent checkpointing and rollback of their entire state, which can take hundreds of milliseconds. To solve this, the authors introduce a new OS-level abstraction called DeltaState, which only captures changes between consecutive checkpoints instead of duplicating the entire state. The key contribution is DeltaBox, a sandbox system that achieves millisecond-level checkpoint and rollback times (14ms and 5ms, respectively), thus enabling AI agents to explore significantly more options within fixed time limits.
 
-### 2. Integrable Elasticity via Neural Demand Potentials
-**Authors:** Carlos Heredia, Daniel Roncel
-**Link:** https://arxiv.org/abs/2605.22820v1
-**Summary:** The paper addresses the challenge of accurately modeling multiproduct retail demand and deriving elasticities from it. The authors introduce a novel neural model called the Integrable Context-Dependent Demand Network (ICDN), which learns demand as a smooth function influenced by various contexts and log-prices. The key finding is that ICDN significantly enhances predictive performance and provides more reliable elasticity estimates compared to traditional methods, particularly for complex cross-price relationships.
+### 2. FAME: Failure-Aware Mixture-of-Experts for Message-Level Log Anomaly Detection
+**Authors:** Huanchi Wang, Zihang Huang, Yifang Tian, Kristina Dzeparoska, Hans-Arno Jacobsen, Alberto Leon-Garcia
+**Link:** https://arxiv.org/abs/2605.22779v1
+**Summary:** The paper addresses the challenge of detecting log anomalies at the message level, which is crucial for identifying specific issues within production systems, as existing methods focus on broader session-level alerts. The authors propose FAME, a label-efficient framework that leverages a large language model offline to classify log lines into failure domains, significantly reducing the need for extensive labeled data. Key results show that FAME achieves high accuracy (F1 scores of 98.16 and 99.95 on different datasets) while minimizing annotation effort by 76 times and effectively detecting a majority of anomalies from previously unseen event types.
 
-### 3. Vector Policy Optimization: Training for Diversity Improves Test-Time Search
-**Authors:** Ryan Bahlous-Boldi, Isha Puri, Idan Shenfeld, Akarsh Kumar, Mehul Damani, Sebastian Risi, Omar Khattab, Zhang-Wei Hong, Pulkit Agrawal
-**Link:** https://arxiv.org/abs/2605.22817v1
-**Summary:** The paper addresses the challenge of training language models to generate diverse solutions that can adapt to various task-specific reward functions during inference. The authors introduce Vector Policy Optimization (VPO), a reinforcement learning algorithm that allows models to anticipate and optimize for diverse rewards rather than a single scalar reward, improving their ability to explore different solutions. The results show that VPO consistently outperforms traditional approaches in test-time search scenarios, particularly as the search budget increases, highlighting the importance of optimizing for diversity in model training.
+### 3. SDPM: Survival Diffusion Probabilistic Model for Continuous-Time Survival Analysis
+**Authors:** Stanislav R. Kirpichenko, Andrei V. Konstantinov, Lev V. Utkin
+**Link:** https://arxiv.org/abs/2605.22776v1
+**Summary:** The paper introduces the Survival Diffusion Probabilistic Model (SDPM) to enhance continuous-time survival analysis, addressing limitations of existing methods related to hazard function assumptions and time discretization. By utilizing a denoising diffusion model to estimate survival distributions without these restrictions, SDPM demonstrates competitive performance against established models on various datasets. Its innovative approach to transforming target space significantly improves the model's predictive accuracy and calibration of event rates.
 
-### 4. Remember to be Curious: Episodic Context and Persistent Worlds for 3D Exploration
-**Authors:** Lily Goli, Justin Kerr, Daniele Reda, Alec Jacobson, Andrea Tagliasacchi, Angjoo Kanazawa
-**Link:** https://arxiv.org/abs/2605.22814v1
-**Summary:** The paper addresses the challenge of effective exploration in sparse-reward 3D environments, where agents often get stuck revisiting old states. The authors propose a method that combines a continuously updated 3D reconstruction of the environment with an episodic policy model that tracks past experiences, allowing the agent to efficiently discover new areas. This approach leads to superior exploration performance during training and successful adaptation to various tasks in unseen environments, outpacing traditional reinforcement learning techniques.
+### 4. MambaGaze: Bidirectional Mamba with Explicit Missing Data Modeling for Cognitive Load Assessment from Eye-Gaze Tracking Data
+**Authors:** Amir Mousavi, Mohammad Sadegh Sirjani, Erfan Nourbakhsh, Mimi Xie, Rocky Slavin, Leslie Neely, John Davis, John Quarles
+**Link:** https://arxiv.org/abs/2605.22775v1
+**Summary:** The paper presents MambaGaze, a novel framework for assessing cognitive load in real-time using eye-tracking data, addressing issues of data loss from blinks and the need for effective modeling of long-term dependencies. The approach includes a unique encoding method to capture data uncertainty and a bidirectional modeling technique with efficient computation. It achieves significant accuracy improvements over existing methods and demonstrates the capability for real-time performance on portable devices, making it suitable for applications like driver monitoring.
 
-### 5. The Matching Principle: A Geometric Theory of Loss Functions for Nuisance-Robust Representation Learning
-**Authors:** Vishal Rajput
-**Link:** https://arxiv.org/abs/2605.22800v1
-**Summary:** This paper addresses the challenge of ensuring robustness in machine learning by proposing a unified approach called the "matching principle," which focuses on estimating the covariance of nuisance factors that do not affect labels and using this to regularize models. The authors demonstrate that various existing techniques, like adversarial training and metric learning, can be viewed as different methods for achieving this goal. A key contribution is the introduction of the Trajectory Deviation Index (TDI) for assessing sensitivity in embeddings and providing closed-form results that validate their theoretical framework with empirical tests across multiple models.
+### 5. CogAdapt: Transferring Clinical ECG Foundation Models to Wearable Cognitive Load Assessment via Lead Adaptation
+**Authors:** Amir Mousavi, Mohammad Sadegh Sirjani, Erfan Nourbakhsh, Mimi Xie, Rocky Slavin, Leslie Neely, John Davis, John Quarles
+**Link:** https://arxiv.org/abs/2605.22774v1
+**Summary:** The paper addresses the challenge of accurately assessing cognitive load using wearable ECG devices, which traditionally struggle with limited data and individual differences. The authors introduce CogAdapt, a framework that uses a learnable adapter to convert signals from wearable sensors into formats compatible with clinical ECG models, along with a fine-tuning approach to improve performance. The results indicate that CogAdapt significantly enhances cognitive load assessment accuracy compared to models trained from scratch, demonstrating its effectiveness in transferring knowledge from clinical to wearable settings.
 
-### 6. Finite-Particle Convergence Rates for Conservative and Non-Conservative Drifting Models
-**Authors:** Krishnakumar Balasubramanian
-**Link:** https://arxiv.org/abs/2605.22795v1
-**Summary:** This paper addresses the convergence rates of finite-particle simulations for generative modeling that use drifting methods, particularly focusing on correcting issues related to non-conservatism in drifting velocities. The authors propose a new conservative drifting method using kernel density estimator gradients, proving that this approach achieves improved convergence rates under certain conditions. Key results include explicit bounds for the method's performance, demonstrating that it can effectively control residual terms while maintaining accurate generation of data.
+### 6. Deep Reinforcement Learning for Flexible Job Shop Scheduling with Random Job Arrivals
+**Authors:** Yu Tang, Muhammad Zakwan, Efe Balta, John Lygeros, Alisa Rupenyan
+**Link:** https://arxiv.org/abs/2605.22773v1
+**Summary:** The paper addresses the Flexible Job Shop Scheduling Problem (FJSP), which involves efficiently allocating jobs with unpredictable arrivals to machines, a task complicated by its combinatorial complexity. The authors propose using a Deep Reinforcement Learning (DRL) approach, specifically the Proximal Policy Optimization algorithm, to minimize job completion times, while leveraging simple neural networks and established dispatching rules. The key finding is that their DRL method significantly outperforms traditional dispatching rules and performs well compared to a mixed-integer linear programming solution, particularly in heterogeneous environments.
 
-### 7. MOSS: Self-Evolution through Source-Level Rewriting in Autonomous Agent Systems
-**Authors:** Qianshu Cai, Yonggang Zhang, Xianzhang Jia, Wei Xue, Jun Song, Xinmei Tian, Yike Guo
-**Link:** https://arxiv.org/abs/2605.22794v1
-**Summary:** The paper addresses the limitations of current autonomous agent systems, which cannot adapt or learn from user interactions after deployment. The authors propose MOSS, a self-evolving system that enables source-level code rewriting to address structural failures, utilizing feedback from production failures for improvement. Remarkably, MOSS improved performance on the OpenClaw benchmark by enhancing task completion scores significantly, all without requiring human intervention.
+### 7. Reducing Political Manipulation with Consistency Training
+**Authors:** Long Phan, Devin Kim, Alexander Pan, Alice Blair, Adam Khoja, Dan Hendrycks
+**Link:** https://arxiv.org/abs/2605.22771v1
+**Summary:** The paper addresses the issue of systematic political bias in large language models (LLMs), which show uneven responses to topics from different political perspectives, a phenomenon termed covert political bias. To combat this, the authors propose Political Consistency Training (PCT), a reinforcement learning method that focuses on improving symmetry in sentiment and helpfulness across political prompts. The results demonstrate that PCT effectively reduces covert bias while maintaining the overall helpfulness of the model, showing promise for application to other benchmarks.
 
-### 8. Gated DeltaNet-2: Decoupling Erase and Write in Linear Attention
-**Authors:** Ali Hatamizadeh, Yejin Choi, Jan Kautz
-**Link:** https://arxiv.org/abs/2605.22791v1
-**Summary:** The paper introduces Gated DeltaNet-2, which addresses the challenge of efficiently managing memory updates in linear attention models by separating the mechanisms for erasing old information and writing new data using distinct channel-wise gates. This approach enhances memory editing in such a way that it improves overall performance in tasks like language modeling and commonsense reasoning, particularly excelling in long-context retrieval scenarios. Gated DeltaNet-2 outperforms its predecessors and related models, achieving the best results across various benchmarks while maintaining efficient training processes.
+### 8. Understanding Data Temporality Impact on Large Language Models Pre-training
+**Authors:** Pilchen Hippolyte, Fabre Romain, Signe Talla Franck, Perez Patrick, Grave Edouard
+**Link:** https://arxiv.org/abs/2605.22769v1
+**Summary:** This paper addresses the issue of how the temporal ordering of training data affects the knowledge retention of large language models (LLMs). The authors created a benchmark for evaluating time-sensitive factual knowledge and pretrained models on temporally ordered datasets rather than the typical shuffled corpora. Their key finding is that sequentially trained models are better at retaining up-to-date knowledge and associating facts with their correct time periods compared to those trained on shuffled data.
 
-### 9. LCGuard: Latent Communication Guard for Safe KV Sharing in Multi-Agent Systems
-**Authors:** Sadia Asif, Mohammad Mohammadi Amiri, Momin Abbas, Prasanna Sattigeri, Karthikeyan Natesan Ramamurthy
-**Link:** https://arxiv.org/abs/2605.22786v1
-**Summary:** The paper presents LCGuard, a framework designed to ensure safe communication between agents in multi-agent systems that use key-value (KV) caches. LCGuard addresses the risk of sensitive information being unintentionally shared through these caches by implementing transformations that obscure reconstructions of agent-specific data while preserving essential task-related information. The results demonstrate that LCGuard effectively reduces the likelihood of sensitive information leakage compared to traditional methods, while still performing competitively on various tasks.
+### 9. Uniform Diffusion Models Revisited: Leave-One-Out Denoiser and Absorbing State Reformulation
+**Authors:** Samson Gourevitch, Yazid Janati, Dario Shariatian, Umut Simsekli, Eric Moulines, Eric P. Xing, Alain Durmus
+**Link:** https://arxiv.org/abs/2605.22765v1
+**Summary:** This paper addresses the discrepancy in training objectives for Uniform Diffusion Models (UDM) by introducing the concept of a leave-one-out denoiser, which predicts each token without relying on its own noisy observation. The authors present a new framework that optimizes this denoising process and reformulates UDM to utilize simpler sampling operations, leading to improved performance in language modeling. Key findings indicate that enhancements in UDM generation are primarily due to changes in parameterization and sampling strategy rather than the choice of model marginals.
 
-### 10. Evaluating Commercial AI Chatbots as News Intermediaries
-**Authors:** Mirac Suzgun, Emily Shen, Federico Bianchi, Alexander Spangher, Thomas Icard, Daniel E. Ho, Dan Jurafsky, James Zou
-**Link:** https://arxiv.org/abs/2605.22785v1
-**Summary:** This study evaluates the accuracy of six AI chatbots in delivering news information by testing them on 2,100 factual questions from BBC News over a two-week period. The findings reveal that while some chatbots perform well with over 90% accuracy on multiple-choice questions, their performance drops significantly on free-response questions and varies by language, particularly underperforming in Hindi. The research highlights critical issues such as reliance on English sources, challenges in retrieving accurate information, and variability in addressing subtle inaccuracies in user queries.
+### 10. Advancing Mathematics Research with AI-Driven Formal Proof Search
+**Authors:** George Tsoukalas, Anton Kovsharov, Sergey Shirobokov, Anja Surina, Moritz Firsching, Gergely Bérczi, Francisco J. R. Ruiz, Arun Suggala, Adam Zsolt Wagner, Eric Wieser, Lei Yu, Aja Huang, Miklós Z. Horváth, Andrew Ferrauiolo, Henryk Michalewski, Codrut Grosu, Thomas Hubert, Matej Balog, Pushmeet Kohli, Swarat Chaudhuri
+**Link:** https://arxiv.org/abs/2605.22763v1
+**Summary:** The paper addresses the challenge of unreliable mathematical reasoning from large language models (LLMs) by using them to generate formal proofs in languages like Lean. The authors conducted a large-scale evaluation and found that their most capable AI agent successfully solved 9 out of 353 open Erdős problems and proved 44 OEIS conjectures at competitive costs. This work highlights the potential of AI to enhance formal proof search in various mathematical domains, showcasing effective agent designs for this purpose.
