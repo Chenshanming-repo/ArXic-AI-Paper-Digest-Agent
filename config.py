@@ -7,8 +7,89 @@ variables for ad-hoc local runs.
 
 from __future__ import annotations
 
+import json
+import logging
 import os
+from dataclasses import dataclass
 from pathlib import Path
+
+logger = logging.getLogger("config")
+
+
+@dataclass(frozen=True)
+class Subscription:
+    """One recipient's category filter for daily digest mail."""
+
+    email: str
+    categories: list[str]
+
+
+def parse_recipients_by_category(
+    raw: str | None, *, known_categories: list[str]
+) -> list[Subscription]:
+    """Parse RECIPIENTS_BY_CATEGORY JSON into validated subscriptions.
+
+    Unknown categories are warned and dropped. Subscriptions left with zero
+    valid categories or with an empty `categories` list are warned and
+    skipped. Duplicate emails are warned and last-wins. Malformed JSON or
+    missing required fields raise ValueError so misconfiguration fails
+    fast at import time.
+    """
+    if not raw or not raw.strip():
+        return []
+
+    try:
+        data = json.loads(raw)
+    except json.JSONDecodeError as exc:
+        raise ValueError(f"RECIPIENTS_BY_CATEGORY is not valid JSON: {exc}") from exc
+
+    if not isinstance(data, list):
+        raise ValueError(
+            "RECIPIENTS_BY_CATEGORY must be a JSON list of "
+            "{email, categories} objects."
+        )
+
+    known = set(known_categories)
+    by_email: dict[str, Subscription] = {}
+    for index, item in enumerate(data):
+        if not isinstance(item, dict):
+            raise ValueError(
+                f"RECIPIENTS_BY_CATEGORY[{index}] must be an object."
+            )
+        email = item.get("email")
+        categories = item.get("categories")
+        if not isinstance(email, str) or not email.strip():
+            raise ValueError(
+                f"RECIPIENTS_BY_CATEGORY[{index}].email must be a non-empty string."
+            )
+        if not isinstance(categories, list):
+            raise ValueError(
+                f"RECIPIENTS_BY_CATEGORY[{index}].categories must be a list."
+            )
+        validated: list[str] = []
+        for category in categories:
+            if category in known:
+                validated.append(category)
+            else:
+                logger.warning(
+                    "RECIPIENTS_BY_CATEGORY: dropping unknown category %r for %s",
+                    category,
+                    email,
+                )
+        if not validated:
+            logger.warning(
+                "RECIPIENTS_BY_CATEGORY: skipping %s — no valid categories left",
+                email,
+            )
+            continue
+        if email in by_email:
+            logger.warning(
+                "RECIPIENTS_BY_CATEGORY: duplicate entry for %s; last one wins",
+                email,
+            )
+        by_email[email] = Subscription(email=email, categories=validated)
+
+    return list(by_email.values())
 
 
 def _env_int(name: str, default: int) -> int:
