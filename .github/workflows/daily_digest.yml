@@ -16,7 +16,7 @@ concurrency:
 jobs:
   digest:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 45
 
     steps:
       - name: Checkout repository
@@ -39,6 +39,17 @@ jobs:
           BASE_URL: ${{ secrets.BASE_URL }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           OPENAI_BASE_URL: ${{ secrets.OPENAI_BASE_URL }}
+          EMAIL_RECIPIENTS: ${{ secrets.EMAIL_RECIPIENTS || vars.EMAIL_RECIPIENTS }}
+          EMAIL_FROM: ${{ secrets.EMAIL_FROM }}
+          SMTP_HOST: ${{ secrets.SMTP_HOST }}
+          SMTP_PORT: ${{ secrets.SMTP_PORT }}
+          SMTP_USERNAME: ${{ secrets.SMTP_USERNAME }}
+          SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
+          SMTP_USE_TLS: ${{ secrets.SMTP_USE_TLS || vars.SMTP_USE_TLS }}
+          SMTP_USE_SSL: ${{ secrets.SMTP_USE_SSL || vars.SMTP_USE_SSL }}
+          EMAIL_SEND_DAILY: ${{ vars.EMAIL_SEND_DAILY }}
+          EMAIL_SEND_WEEKLY: ${{ vars.EMAIL_SEND_WEEKLY }}
+          EMAIL_SEND_MONTHLY: ${{ vars.EMAIL_SEND_MONTHLY }}
         run: python main.py
 
       - name: Commit and push digest

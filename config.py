@@ -68,13 +68,13 @@ TOPIC_KEYWORDS: list[str] = _env_list(
     ],
 )
 
-# Cap on summaries written per run; controls cost and noise.
-MAX_PAPERS: int = _env_int("MAX_PAPERS", 10)
+# Cap on summaries written per run; set to 0 to summarise every fresh paper
+# that matches the configured categories and topic keywords.
+MAX_PAPERS: int = _env_int("MAX_PAPERS", 0)
 
-# How many results to ask ArXiv for. We pull more than MAX_PAPERS so that,
-# after deduplication against papers we have already digested, we still
-# have a healthy pool to choose from.
-ARXIV_PAGE_SIZE: int = _env_int("ARXIV_PAGE_SIZE", 50)
+# How many newest ArXiv results to inspect before deduplication/topic filtering.
+# Increase this when tracking broad topics and using MAX_PAPERS=0.
+ARXIV_PAGE_SIZE: int = _env_int("ARXIV_PAGE_SIZE", 200)
 
 # ArXiv API endpoint. Use https; the http endpoint redirects.
 ARXIV_API_URL: str = "https://export.arxiv.org/api/query"
@@ -98,6 +98,20 @@ ROLLUP_MAX_TOKENS: int = _env_int("ROLLUP_MAX_TOKENS", 1200)
 # week on Mondays and the previous completed calendar month on the first day.
 ENABLE_WEEKLY_SUMMARY: bool = _env_bool("ENABLE_WEEKLY_SUMMARY", True)
 ENABLE_MONTHLY_SUMMARY: bool = _env_bool("ENABLE_MONTHLY_SUMMARY", True)
+
+# Email delivery. If EMAIL_RECIPIENTS is empty, email sending is disabled.
+EMAIL_RECIPIENTS: list[str] = _env_list("EMAIL_RECIPIENTS", [])
+EMAIL_SEND_DAILY: bool = _env_bool("EMAIL_SEND_DAILY", True)
+EMAIL_SEND_WEEKLY: bool = _env_bool("EMAIL_SEND_WEEKLY", True)
+EMAIL_SEND_MONTHLY: bool = _env_bool("EMAIL_SEND_MONTHLY", True)
+
+SMTP_HOST: str = os.getenv("SMTP_HOST", "")
+SMTP_USE_SSL: bool = _env_bool("SMTP_USE_SSL", False)
+SMTP_USE_TLS: bool = _env_bool("SMTP_USE_TLS", True)
+SMTP_PORT: int = _env_int("SMTP_PORT", 465 if SMTP_USE_SSL else 587)
+SMTP_USERNAME: str = os.getenv("SMTP_USERNAME", "")
+SMTP_PASSWORD: str = os.getenv("SMTP_PASSWORD", "")
+EMAIL_FROM: str = os.getenv("EMAIL_FROM") or SMTP_USERNAME
 
 # Filesystem layout.
 PROJECT_ROOT: Path = Path(__file__).resolve().parent

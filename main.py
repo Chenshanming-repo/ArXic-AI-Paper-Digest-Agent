@@ -3,7 +3,7 @@
 Run from the GitHub Action (or locally) to:
   1. Fetch the most recent ArXiv submissions in the configured categories.
   2. Drop any papers we have already digested on a previous day.
-  3. Summarise up to MAX_PAPERS of the remainder with an OpenAI-compatible API.
+  3. Summarise all matching papers, or up to MAX_PAPERS if a cap is configured.
   4. Append the result to digest/digest.md and overwrite digest/latest.md.
   5. Archive each generated digest as an individual Markdown file.
   6. On schedule, create Chinese weekly/monthly rollups from digest history.
@@ -61,18 +61,26 @@ def _parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Generate ArXiv digest files.")
     parser.add_argument(
         "--mode",
-        choices=["daily", "weekly", "monthly", "archive"],
+        choices=["daily", "weekly", "monthly", "archive", "email-test"],
         default="daily",
         help=(
             "daily fetches and summarises new papers; weekly/monthly generate "
             "only the previous completed period rollup; archive backfills "
-            "per-day archive files from digest history."
+            "per-day archive files from digest history; email-test sends a "
+            "Chinese Markdown test digest without API calls."
         ),
     )
     parser.add_argument(
         "--force-rollups",
         action="store_true",
         help="With --mode daily, generate weekly and monthly rollups even if not due.",
+    )
+    parser.add_argument(
+        "--email-to",
+        help=(
+            "Comma-separated recipients for --mode email-test. Overrides "
+            "EMAIL_RECIPIENTS for that test send."
+        ),
     )
     return parser.parse_args(argv)
 
@@ -112,6 +120,34 @@ def _monthly_archive_path(start_date) -> Path:
     return config.MONTHLY_ARCHIVE_DIR / f"{start_date.strftime('%Y-%m')}.md"
 
 
+def _send_digest_email(
+    *,
+    subject: str,
+    rendered: str,
+    attachment_name: str,
+    recipients: list[str] | None = None,
+) -> bool:
+    from src.emailer import send_markdown_email
+
+    try:
+        return send_markdown_email(
+            subject=subject,
+            markdown=rendered,
+            attachment_name=attachment_name,
+            recipients=recipients or config.EMAIL_RECIPIENTS,
+            email_from=config.EMAIL_FROM,
+            smtp_host=config.SMTP_HOST,
+            smtp_port=config.SMTP_PORT,
+            smtp_username=config.SMTP_USERNAME,
+            smtp_password=config.SMTP_PASSWORD,
+            use_tls=config.SMTP_USE_TLS,
+            use_ssl=config.SMTP_USE_SSL,
+        )
+    except Exception as exc:
+        logger.error("Failed to send digest email '%s': %s", subject, exc)
+        return False
+
+
 def _run_daily_digest(now: datetime, client) -> int:
     from src.fetcher import fetch_recent_papers
     from src.models import Digest
@@ -149,8 +185,21 @@ def _run_daily_digest(now: datetime, client) -> int:
         )
         return 0
 
-    papers = fresh[: config.MAX_PAPERS]
-    logger.info("Summarising %d papers with model %s", len(papers), config.OPENAI_MODEL)
+    if config.MAX_PAPERS > 0:
+        papers = fresh[: config.MAX_PAPERS]
+        logger.info(
+            "Summarising %d/%d fresh papers with model %s",
+            len(papers),
+            len(fresh),
+            config.OPENAI_MODEL,
+        )
+    else:
+        papers = fresh
+        logger.info(
+            "Summarising all %d fresh matching papers with model %s",
+            len(papers),
+            config.OPENAI_MODEL,
+        )
 
     entries = summarise_papers(
         papers,
@@ -176,6 +225,12 @@ def _run_daily_digest(now: datetime, client) -> int:
         rendered,
         f"ArXiv 每日论文摘要 {digest.digest_date.isoformat()}",
     )
+    if config.EMAIL_SEND_DAILY:
+        _send_digest_email(
+            subject=f"ArXiv 每日论文摘要 {digest.digest_date.isoformat()}",
+            rendered=rendered,
+            attachment_name=f"arxiv-daily-{digest.digest_date.isoformat()}.md",
+        )
 
     logger.info(
         "Digest complete: %d/%d papers summarised for %s",
@@ -249,6 +304,18 @@ def _run_period_summary(kind: str, now: datetime, client) -> bool:
     append_period_summary(output_file, rendered, title)
     write_latest(latest_file, rendered)
     write_archive_file(archive_file, rendered, f"{title} {period_label}")
+    if kind == "weekly" and config.EMAIL_SEND_WEEKLY:
+        _send_digest_email(
+            subject=f"{title} {period_label}",
+            rendered=rendered,
+            attachment_name=f"arxiv-weekly-{start_date.isoformat()}_to_{end_date.isoformat()}.md",
+        )
+    if kind == "monthly" and config.EMAIL_SEND_MONTHLY:
+        _send_digest_email(
+            subject=f"{title} {period_label}",
+            rendered=rendered,
+            attachment_name=f"arxiv-monthly-{start_date.strftime('%Y-%m')}.md",
+        )
     return True
 
 
@@ -277,6 +344,33 @@ def _run_archive_backfill() -> int:
     return 0
 
 
+def _run_email_test(email_to: str | None) -> int:
+    recipients = (
+        [item.strip() for item in email_to.split(",") if item.strip()]
+        if email_to
+        else config.EMAIL_RECIPIENTS
+    )
+    rendered = (
+        "---\n"
+        "## 邮件发送测试\n\n"
+        "### 1. ArXiv 摘要邮件中文测试\n"
+        "**作者:** ArXiv Digest Agent\n"
+        "**链接:** https://arxiv.org/\n"
+        "**摘要:** 这是一封中文 Markdown 测试邮件，用于验证 SMTP 配置、"
+        "收件人列表和附件发送是否正常。正式的每日、每周和每月邮件会使用"
+        "模型新生成的中文论文摘要；旧的历史 digest 文件如果原本是英文，"
+        "不会在测试模式中被直接发送。\n"
+    )
+
+    sent = _send_digest_email(
+        subject="ArXiv 摘要邮件测试",
+        rendered=rendered,
+        attachment_name="arxiv-email-test.md",
+        recipients=recipients,
+    )
+    return 0 if sent else 1
+
+
 def run(argv: Sequence[str] | None = None) -> int:
     """Main entry point. Returns the desired process exit code."""
     args = _parse_args(argv)
@@ -285,6 +379,8 @@ def run(argv: Sequence[str] | None = None) -> int:
 
     if args.mode == "archive":
         return _run_archive_backfill()
+    if args.mode == "email-test":
+        return _run_email_test(args.email_to)
 
     api_key = _require_api_key()
     client = _build_openai_client(api_key)

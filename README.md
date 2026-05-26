@@ -21,23 +21,25 @@ Every day at **09:00 UTC**, a scheduled GitHub Action:
 3. Drops any paper whose ArXiv id already appears in
    [`digest/digest.md`](digest/digest.md), so the same paper is never
    summarised twice.
-4. Sends up to `MAX_PAPERS` abstracts (default 10) to an OpenAI-compatible
-   chat completions endpoint to produce concise 2-3 sentence Chinese summaries.
+4. Sends every fresh matching abstract to an OpenAI-compatible chat completions
+   endpoint to produce concise 2-3 sentence Chinese summaries. Set
+   `MAX_PAPERS` above `0` only if you want a daily cap.
 5. Appends the day's digest to `digest/digest.md`, a running log you can
    read like a journal.
 6. Overwrites [`digest/latest.md`](digest/latest.md) with just today's
    entries. Useful for any external consumer that wants a small,
    stable file to pull from.
 7. Archives the daily digest as `digest/archive/daily/YYYY-MM-DD.md`.
-8. On Mondays, writes a Chinese summary for the previous completed ISO week to
+8. Emails the daily Markdown file to `EMAIL_RECIPIENTS` if email is configured.
+9. On Mondays, writes a Chinese summary for the previous completed ISO week to
    `digest/weekly.md` and `digest/latest_weekly.md`.
-9. Archives the weekly summary as
+10. Archives and emails the weekly summary as
    `digest/archive/weekly/YYYY-MM-DD_to_YYYY-MM-DD.md`.
-10. On the first day of each month, writes a Chinese summary for the previous
+11. On the first day of each month, writes a Chinese summary for the previous
    completed calendar month to `digest/monthly.md` and
    `digest/latest_monthly.md`.
-11. Archives the monthly summary as `digest/archive/monthly/YYYY-MM.md`.
-12. Commits and pushes the changes back to `main`. If everything in the
+12. Archives and emails the monthly summary as `digest/archive/monthly/YYYY-MM.md`.
+13. Commits and pushes the changes back to `main`. If everything in the
    ArXiv response is already digested (e.g. quiet weekends or a re-run
    on the same day), the run exits cleanly and creates no commit.
 
@@ -51,12 +53,18 @@ Every day at **09:00 UTC**, a scheduled GitHub Action:
 3. **Optional third-party endpoint**: add another repository secret named
    `BASE_URL`, for example `https://api.example.com/v1`. Leave it unset to use
    the OpenAI SDK default endpoint.
-4. **Enable GitHub Actions** for the fork (Settings → Actions → General →
+4. **Optional email delivery**: set these repository secrets:
+   - `EMAIL_RECIPIENTS`: comma-separated list such as
+     `alice@example.com,bob@example.com`.
+   - `EMAIL_FROM`: sender address, for example `ArXiv Digest <digest@example.com>`.
+   - `SMTP_HOST`, `SMTP_PORT`, `SMTP_USERNAME`, `SMTP_PASSWORD`.
+   - `SMTP_USE_TLS` or `SMTP_USE_SSL` if your provider needs non-default values.
+5. **Enable GitHub Actions** for the fork (Settings → Actions → General →
    *Allow all actions*). Forks have Actions disabled by default.
-5. Make sure the workflow has write access. With the default setting
+6. Make sure the workflow has write access. With the default setting
    `permissions: contents: write` already in the workflow file, the
    built-in `GITHUB_TOKEN` is sufficient (no PAT required).
-6. (Optional) Trigger a first run manually: **Actions → Daily ArXiv Digest
+7. (Optional) Trigger a first run manually: **Actions → Daily ArXiv Digest
    → Run workflow**.
 
 That's it. The Action will run every day at 09:00 UTC and update the digest
@@ -90,6 +98,12 @@ To generate only a rollup locally, run `python main.py --mode weekly` or
 To split the existing historical `digest/digest.md` into per-day archive
 files, run `python main.py --mode archive`.
 
+To test email delivery with a Chinese sample digest, run:
+
+```bash
+python main.py --mode email-test --email-to 1102643651@qq.com
+```
+
 ## Configuration
 
 All tuneable values live in [`config.py`](config.py) and may be overridden
@@ -98,9 +112,9 @@ by environment variables (see `.env.example`):
 | Setting              | Default                  | Description                                       |
 | -------------------- | ------------------------ | ------------------------------------------------- |
 | `ARXIV_CATEGORIES`   | `cs.AI, cs.LG, stat.ML, q-bio.QM, q-bio.GN` | ArXiv categories to monitor. |
-| `ARXIV_TOPIC_KEYWORDS` | AI/deep learning/bioinformatics terms | Topic filter applied after fetching. |
-| `MAX_PAPERS`         | `10`                     | Maximum papers summarised per run.                |
-| `ARXIV_PAGE_SIZE`    | `50`                     | How many results to pull from ArXiv per query.    |
+| `ARXIV_TOPIC_KEYWORDS` | AI/deep learning/bioinformatics terms | User-chosen topic filter applied after fetching. |
+| `MAX_PAPERS`         | `0`                      | `0` means all fresh matching papers; positive values cap daily summaries. |
+| `ARXIV_PAGE_SIZE`    | `200`                    | How many recent ArXiv results to inspect before filtering. |
 | `OPENAI_MODEL`       | `gpt-4o-mini`            | OpenAI model used for summaries.                  |
 | `OPENAI_MAX_TOKENS`  | `300`                    | Max tokens per summary.                           |
 | `API_KEY`            | required                 | API key for OpenAI or a compatible provider.      |
@@ -108,11 +122,25 @@ by environment variables (see `.env.example`):
 | `ROLLUP_MAX_TOKENS`  | `1200`                   | Max tokens for weekly/monthly summaries.          |
 | `ENABLE_WEEKLY_SUMMARY` | `true`                | Generate previous-week rollups on Mondays.        |
 | `ENABLE_MONTHLY_SUMMARY` | `true`               | Generate previous-month rollups on day 1.         |
+| `EMAIL_RECIPIENTS`   | unset                    | Comma-separated email list; empty disables email. |
+| `EMAIL_FROM`         | `SMTP_USERNAME`          | Sender address for digest emails.                 |
+| `SMTP_HOST`          | unset                    | SMTP server host.                                 |
+| `SMTP_PORT`          | `587` or `465`           | SMTP server port.                                 |
+| `SMTP_USERNAME`      | unset                    | SMTP login username.                              |
+| `SMTP_PASSWORD`      | unset                    | SMTP login password or app password.              |
+| `SMTP_USE_TLS`       | `true`                   | Use STARTTLS for SMTP.                            |
+| `SMTP_USE_SSL`       | `false`                  | Use SMTP over SSL.                                |
+| `EMAIL_SEND_DAILY`   | `true`                   | Send daily digest emails.                         |
+| `EMAIL_SEND_WEEKLY`  | `true`                   | Send weekly summary emails.                       |
+| `EMAIL_SEND_MONTHLY` | `true`                   | Send monthly summary emails.                      |
 
-The bot picks the top `MAX_PAPERS` papers by ArXiv submission date that it
-has not summarised before. `ARXIV_PAGE_SIZE` should be larger than
-`MAX_PAPERS` to give the dedup step a healthy pool to choose from on busy
-days.
+The bot first pulls the newest `ARXIV_PAGE_SIZE` records from the configured
+ArXiv categories, then keeps records whose title/abstract matches
+`ARXIV_TOPIC_KEYWORDS`, then removes papers already present in
+`digest/digest.md`. With the default `MAX_PAPERS=0`, every remaining fresh
+matching paper is summarised. Increase `ARXIV_PAGE_SIZE` when your chosen
+topics are broad, or set `MAX_PAPERS` to a positive number if you want to cap
+cost and email length.
 
 ## Example output
 
@@ -135,10 +163,10 @@ A daily entry in `digest/digest.md` looks like this:
 
 ## Cost
 
-At the default of 10 papers/day with `gpt-4o-mini`, this costs roughly
-**$0.01–0.02 per day** (approximately $4–7/year). Bumping `MAX_PAPERS` or
-switching to a larger model (e.g. `gpt-4o`) will scale costs roughly
-linearly. ArXiv API access is free.
+Cost scales with the number of fresh matching papers. With `MAX_PAPERS=0`, a
+broad topic can send many abstracts to the model in one run. To control cost,
+use narrower `ARXIV_TOPIC_KEYWORDS`, lower `ARXIV_PAGE_SIZE`, or set a positive
+`MAX_PAPERS`. ArXiv API access is free.
 
 ## Project structure
 
@@ -160,6 +188,7 @@ arxiv-digest/
 │       └── monthly/           # one file per monthly summary
 ├── src/
 │   ├── fetcher.py             # ArXiv API + Atom XML parsing
+│   ├── emailer.py             # SMTP delivery for Markdown digests
 │   ├── summariser.py          # OpenAI API calls
 │   ├── rollup.py              # weekly/monthly digest history parsing
 │   ├── writer.py              # markdown rendering and file I/O
