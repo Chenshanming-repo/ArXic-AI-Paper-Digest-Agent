@@ -1,12 +1,14 @@
-"""Render and write the daily digest as Markdown."""
+"""Render and write digest Markdown files."""
 
 from __future__ import annotations
 
 import logging
 import re
 from pathlib import Path
+from typing import TYPE_CHECKING
 
-from src.models import Digest, DigestEntry
+if TYPE_CHECKING:
+    from src.models import Digest, DigestEntry
 
 logger = logging.getLogger(__name__)
 
@@ -18,7 +20,7 @@ _ARXIV_URL_RE = re.compile(r"https?://arxiv\.org/abs/(\S+)")
 
 def _format_authors(authors: list[str]) -> str:
     if not authors:
-        return "Unknown"
+        return "未知"
     return ", ".join(authors)
 
 
@@ -26,9 +28,9 @@ def _render_entry(index: int, entry: DigestEntry) -> str:
     paper = entry.paper
     return (
         f"### {index}. {paper.title}\n"
-        f"**Authors:** {_format_authors(paper.authors)}\n"
-        f"**Link:** {paper.url}\n"
-        f"**Summary:** {entry.summary}\n"
+        f"**作者:** {_format_authors(paper.authors)}\n"
+        f"**链接:** {paper.url}\n"
+        f"**摘要:** {entry.summary}\n"
     )
 
 
@@ -51,7 +53,7 @@ def append_to_digest(path: Path, rendered: str) -> None:
         separator = "" if existing.endswith("\n") else "\n"
         path.write_text(existing + separator + "\n" + rendered, encoding="utf-8")
     else:
-        header = "# ArXiv Daily Digest\n\nAutomatically generated daily summaries of recent ArXiv papers.\n\n"
+        header = "# ArXiv 每日论文摘要\n\n自动生成的近期 ArXiv 论文中文摘要。\n\n"
         path.write_text(header + rendered, encoding="utf-8")
     logger.info("Appended digest to %s", path)
 
@@ -61,6 +63,65 @@ def write_latest(path: Path, rendered: str) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(rendered, encoding="utf-8")
     logger.info("Wrote latest digest to %s", path)
+
+
+def append_archive_file(path: Path, rendered: str, title: str) -> None:
+    """Append a rendered section to one archive file, creating it if needed."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    if path.exists() and path.stat().st_size > 0:
+        existing = path.read_text(encoding="utf-8")
+        separator = "" if existing.endswith("\n") else "\n"
+        path.write_text(existing + separator + "\n" + rendered, encoding="utf-8")
+    else:
+        path.write_text(f"# {title}\n\n" + rendered, encoding="utf-8")
+    logger.info("Archived digest section to %s", path)
+
+
+def write_archive_file(path: Path, rendered: str, title: str) -> None:
+    """Overwrite one archive file with a complete rendered digest."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(f"# {title}\n\n" + rendered, encoding="utf-8")
+    logger.info("Wrote archive file to %s", path)
+
+
+def render_period_summary(period_label: str, summary: str, paper_count: int) -> str:
+    """Render a weekly/monthly rollup section."""
+    if not summary.strip():
+        raise ValueError("Cannot render an empty period summary.")
+    lines = [
+        "---",
+        f"## {period_label}",
+        "",
+        f"**论文数量:** {paper_count}",
+        "",
+        summary.strip(),
+    ]
+    return "\n".join(lines).rstrip() + "\n"
+
+
+def period_summary_exists(path: Path, period_label: str) -> bool:
+    """Return whether a weekly/monthly summary already has this heading."""
+    if not path.exists():
+        return False
+    try:
+        text = path.read_text(encoding="utf-8")
+    except OSError as exc:
+        logger.warning("Could not read %s for rollup dedup: %s", path, exc)
+        return False
+    return f"## {period_label}" in text
+
+
+def append_period_summary(path: Path, rendered: str, title: str) -> None:
+    """Append a rendered weekly/monthly summary, creating the file if needed."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    if path.exists() and path.stat().st_size > 0:
+        existing = path.read_text(encoding="utf-8")
+        separator = "" if existing.endswith("\n") else "\n"
+        path.write_text(existing + separator + "\n" + rendered, encoding="utf-8")
+    else:
+        header = f"# {title}\n\n自动生成的 ArXiv 论文阶段性中文综述。\n\n"
+        path.write_text(header + rendered, encoding="utf-8")
+    logger.info("Appended period summary to %s", path)
 
 
 def read_seen_arxiv_ids(path: Path) -> set[str]:

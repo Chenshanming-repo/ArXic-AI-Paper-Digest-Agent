@@ -25,7 +25,7 @@ class DigestEntry(BaseModel):
     """A paper paired with its LLM-generated summary, ready to render."""
 
     paper: Paper
-    summary: str = Field(..., description="2-3 sentence plain-English summary.")
+    summary: str = Field(..., description="2-3 sentence Chinese summary.")
 
 
 class Digest(BaseModel):

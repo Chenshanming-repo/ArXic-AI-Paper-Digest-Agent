@@ -135,6 +135,20 @@ def _build_search_query(categories: list[str]) -> str:
     return " OR ".join(f"cat:{cat}" for cat in categories)
 
 
+def _paper_matches_topic(paper: Paper, topic_keywords: list[str]) -> bool:
+    if not topic_keywords:
+        return True
+
+    haystack = " ".join(
+        [
+            paper.title,
+            paper.abstract,
+            paper.primary_category or "",
+        ]
+    ).casefold()
+    return any(keyword.casefold() in haystack for keyword in topic_keywords)
+
+
 def _parse_entry(entry: ET.Element) -> Paper | None:
     """Parse a single <entry> element into a Paper, or None if malformed."""
     id_el = entry.find("atom:id", _NS)
@@ -201,6 +215,7 @@ def _parse_entry(entry: ET.Element) -> Paper | None:
 def fetch_recent_papers(
     *,
     categories: list[str],
+    topic_keywords: list[str] | None = None,
     page_size: int,
     api_url: str,
     http_client: httpx.Client | None = None,
@@ -209,8 +224,10 @@ def fetch_recent_papers(
 
     Returns up to `page_size` papers sorted by submission date, newest first.
     No time-window filtering is applied here: the caller is responsible for
-    deduplication and capping the final list. Network and parsing errors
-    are surfaced to the caller.
+    deduplication and capping the final list. If `topic_keywords` is provided,
+    parsed papers are also filtered by title/abstract text so broad ArXiv
+    categories only emit the configured subject areas. Network and parsing
+    errors are surfaced to the caller.
     """
     params = {
         "search_query": _build_search_query(categories),
@@ -250,8 +267,20 @@ def fetch_recent_papers(
         if paper is not None:
             papers.append(paper)
 
+    if topic_keywords:
+        before_count = len(papers)
+        papers = [
+            paper for paper in papers if _paper_matches_topic(paper, topic_keywords)
+        ]
+        logger.info(
+            "Topic filter kept %d/%d papers using keywords=%s",
+            len(papers),
+            before_count,
+            topic_keywords,
+        )
+
     logger.info(
-        "ArXiv returned %d entries, %d parsed successfully",
+        "ArXiv returned %d entries, %d papers available after parsing/filtering",
         len(raw_entries),
         len(papers),
     )
