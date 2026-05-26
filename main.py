@@ -310,6 +310,37 @@ def _send_digest_email(
         return False
 
 
+def _cap_papers_per_category(
+    papers,
+    *,
+    found_in_category: dict[str, str],
+    categories,
+    max_per_category: int,
+):
+    """Apply MAX_PAPERS independently to each configured category.
+
+    Papers are grouped by `found_in_category[arxiv_id]`, each bucket is
+    truncated to `max_per_category`, and buckets are concatenated in the
+    order given by `categories`. Papers missing from the mapping are
+    dropped. `max_per_category <= 0` disables capping.
+    """
+    if max_per_category <= 0:
+        return list(papers)
+
+    by_cat: dict[str, list] = {}
+    for paper in papers:
+        category = found_in_category.get(paper.arxiv_id)
+        if category is None:
+            continue
+        by_cat.setdefault(category, []).append(paper)
+
+    capped = []
+    for category in categories:
+        bucket = by_cat.get(category, [])
+        capped.extend(bucket[:max_per_category])
+    return capped
+
+
 def _send_subscription_emails(
     *,
     entries,
@@ -408,11 +439,17 @@ def _run_daily_digest(now: datetime, client, model: str) -> int:
         return 0
 
     if config.MAX_PAPERS > 0:
-        papers = fresh[: config.MAX_PAPERS]
+        papers = _cap_papers_per_category(
+            fresh,
+            found_in_category=found_in_category,
+            categories=config.CATEGORIES,
+            max_per_category=config.MAX_PAPERS,
+        )
         logger.info(
-            "Summarising %d/%d fresh papers with model %s",
+            "Summarising %d/%d fresh papers (cap %d per category) with model %s",
             len(papers),
             len(fresh),
+            config.MAX_PAPERS,
             model,
         )
     else:
