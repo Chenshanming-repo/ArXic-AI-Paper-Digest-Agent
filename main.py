@@ -310,6 +310,47 @@ def _send_digest_email(
         return False
 
 
+def _send_subscription_emails(
+    *,
+    entries,
+    found_in_category: dict[str, str],
+    digest_date,
+    subscriptions,
+) -> None:
+    """Send one filtered daily digest per Subscription.
+
+    Subscribers with zero matched papers receive nothing.
+    """
+    from src.models import Digest
+
+    for sub in subscriptions:
+        wanted = set(sub.categories)
+        filtered = [
+            entry
+            for entry in entries
+            if found_in_category.get(entry.paper.arxiv_id) in wanted
+        ]
+        if not filtered:
+            logger.info(
+                "Subscription %s has no matched papers today, skipping",
+                sub.email,
+            )
+            continue
+
+        rendered = render_digest(
+            Digest(digest_date=digest_date, entries=filtered),
+            category_by_id=found_in_category,
+            category_order=list(sub.categories),
+        )
+        category_label = ",".join(sub.categories)
+        _send_digest_email(
+            subject=f"ArXiv 每日论文摘要 [{category_label}] {digest_date.isoformat()}",
+            rendered=rendered,
+            attachment_name=f"arxiv-daily-{digest_date.isoformat()}.md",
+            recipients=[sub.email],
+        )
+
+
 def _run_daily_digest(now: datetime, client, model: str) -> int:
     from src.fetcher import fetch_recent_papers
     from src.models import Digest
