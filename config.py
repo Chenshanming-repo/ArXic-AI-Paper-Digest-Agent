@@ -217,3 +217,11 @@ DAILY_ARCHIVE_DIR: Path = ARCHIVE_DIR / "daily"
 WEEKLY_ARCHIVE_DIR: Path = ARCHIVE_DIR / "weekly"
 MONTHLY_ARCHIVE_DIR: Path = ARCHIVE_DIR / "monthly"
 METADATA_DB_FILE: Path = DIGEST_DIR / "arxiv_metadata.sqlite3"
+
+# Per-recipient category subscriptions. JSON list of {email, categories}
+# objects. When non-empty, the daily digest sends one filtered email per
+# subscription instead of a single email to EMAIL_RECIPIENTS.
+RECIPIENTS_BY_CATEGORY: list[Subscription] = parse_recipients_by_category(
+    os.getenv("RECIPIENTS_BY_CATEGORY"),
+    known_categories=CATEGORIES,
+)

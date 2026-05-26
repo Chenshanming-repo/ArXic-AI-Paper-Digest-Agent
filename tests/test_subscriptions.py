@@ -95,5 +95,27 @@ class ParseRecipientsByCategoryTest(unittest.TestCase):
         self.assertTrue(any("a@b.com" in line for line in captured.output))
 
 
+class RecipientsByCategoryEnvTest(unittest.TestCase):
+    def test_module_constant_reflects_env(self) -> None:
+        import importlib
+        import os
+
+        os.environ["RECIPIENTS_BY_CATEGORY"] = (
+            '[{"email": "alice@x.com", "categories": ["cs.AI"]}]'
+        )
+        os.environ["ARXIV_CATEGORIES"] = "cs.AI,cs.LG"
+        try:
+            import config
+            importlib.reload(config)
+            self.assertEqual(
+                config.RECIPIENTS_BY_CATEGORY,
+                [config.Subscription(email="alice@x.com", categories=["cs.AI"])],
+            )
+        finally:
+            del os.environ["RECIPIENTS_BY_CATEGORY"]
+            del os.environ["ARXIV_CATEGORIES"]
+            importlib.reload(config)
+
+
 if __name__ == "__main__":
     unittest.main()
