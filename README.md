@@ -104,6 +104,88 @@ To test email delivery with a Chinese sample digest, run:
 python main.py --mode email-test --email-to 1102643651@qq.com
 ```
 
+To test both the AI endpoint and email delivery, run:
+
+```bash
+python main.py --mode ai-email-test --email-to 1102643651@qq.com
+```
+
+## Linux server deployment
+
+On a Linux server, install Python and clone the project:
+
+```bash
+sudo apt update
+sudo apt install -y git python3 python3-venv
+
+cd /opt
+sudo git clone https://github.com/<you>/ArXic-AI-Paper-Digest-Agent.git
+sudo chown -R "$USER:$USER" ArXic-AI-Paper-Digest-Agent
+cd ArXic-AI-Paper-Digest-Agent
+
+python3 -m venv .venv
+. .venv/bin/activate
+pip install -r requirements.txt
+```
+
+Create `.env` on the server and keep it private:
+
+```bash
+cp .env.example .env
+chmod 600 .env
+nano .env
+```
+
+Required `.env` values:
+
+```env
+API_KEY=your-openai-compatible-api-key
+BASE_URL=https://your-provider.example/v1
+OPENAI_MODEL=your-model-name
+
+ARXIV_CATEGORIES=cs.AI,cs.LG,stat.ML,q-bio.QM,q-bio.GN
+ARXIV_TOPIC_KEYWORDS=deep learning,bioinformatics,genomics,protein,foundation model
+MAX_PAPERS=0
+ARXIV_PAGE_SIZE=300
+
+EMAIL_RECIPIENTS=recipient1@example.com,recipient2@example.com
+EMAIL_FROM=your_sender@example.com
+SMTP_HOST=smtp.example.com
+SMTP_PORT=465
+SMTP_USERNAME=your_sender@example.com
+SMTP_PASSWORD=your-smtp-app-password
+SMTP_USE_SSL=true
+SMTP_USE_TLS=false
+```
+
+For QQ Mail as the sender, use `smtp.qq.com`, port `465`, SSL enabled, and the
+QQ Mail SMTP authorization code rather than your account password.
+
+Run one deployment test that uses AI and sends an email:
+
+```bash
+.venv/bin/python main.py --mode ai-email-test --email-to 1102643651@qq.com
+```
+
+If the test succeeds, schedule the digest with cron:
+
+```bash
+mkdir -p logs
+crontab -e
+```
+
+Add this entry to run every day at 09:00 UTC:
+
+```cron
+CRON_TZ=UTC
+0 9 * * * cd /opt/ArXic-AI-Paper-Digest-Agent && .venv/bin/python main.py >> logs/digest.log 2>&1
+```
+
+The daily run also creates weekly summaries on Mondays and monthly summaries on
+the first day of each month. If GitHub Actions is still enabled for the same
+repo, disable either the server cron job or the GitHub schedule to avoid
+duplicate emails.
+
 ## Configuration
 
 All tuneable values live in [`config.py`](config.py) and may be overridden

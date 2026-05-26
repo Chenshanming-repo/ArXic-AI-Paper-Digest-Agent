@@ -61,13 +61,21 @@ def _parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Generate ArXiv digest files.")
     parser.add_argument(
         "--mode",
-        choices=["daily", "weekly", "monthly", "archive", "email-test"],
+        choices=[
+            "daily",
+            "weekly",
+            "monthly",
+            "archive",
+            "email-test",
+            "ai-email-test",
+        ],
         default="daily",
         help=(
             "daily fetches and summarises new papers; weekly/monthly generate "
             "only the previous completed period rollup; archive backfills "
             "per-day archive files from digest history; email-test sends a "
-            "Chinese Markdown test digest without API calls."
+            "Chinese Markdown test digest without API calls; ai-email-test "
+            "generates a Chinese AI summary and emails it."
         ),
     )
     parser.add_argument(
@@ -78,8 +86,8 @@ def _parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     parser.add_argument(
         "--email-to",
         help=(
-            "Comma-separated recipients for --mode email-test. Overrides "
-            "EMAIL_RECIPIENTS for that test send."
+            "Comma-separated recipients for --mode email-test or "
+            "ai-email-test. Overrides EMAIL_RECIPIENTS for that test send."
         ),
     )
     return parser.parse_args(argv)
@@ -371,6 +379,53 @@ def _run_email_test(email_to: str | None) -> int:
     return 0 if sent else 1
 
 
+def _run_ai_email_test(email_to: str | None, client) -> int:
+    from src.models import Digest, DigestEntry, Paper
+    from src.summariser import summarise_paper
+
+    recipients = (
+        [item.strip() for item in email_to.split(",") if item.strip()]
+        if email_to
+        else config.EMAIL_RECIPIENTS
+    )
+    now = datetime.now(timezone.utc)
+    paper = Paper(
+        arxiv_id="test-ai-email",
+        url="https://arxiv.org/abs/test-ai-email",
+        title="Sample Deployment Test for AI Paper Digest",
+        authors=["ArXiv Digest Agent"],
+        abstract=(
+            "This deployment test checks whether an ArXiv digest system can "
+            "send paper metadata to an OpenAI-compatible model, receive a "
+            "concise technical summary, render it as Markdown, and deliver "
+            "the generated digest through SMTP email. The test focuses on "
+            "verifying the production path rather than evaluating a real "
+            "research contribution."
+        ),
+        published=now,
+        primary_category="cs.AI",
+    )
+    summary = summarise_paper(
+        paper,
+        client=client,
+        model=config.OPENAI_MODEL,
+        max_tokens=config.OPENAI_MAX_TOKENS,
+    )
+    rendered = render_digest(
+        Digest(
+            digest_date=now.date(),
+            entries=[DigestEntry(paper=paper, summary=summary)],
+        )
+    )
+    sent = _send_digest_email(
+        subject="ArXiv AI 摘要邮件测试",
+        rendered=rendered,
+        attachment_name="arxiv-ai-email-test.md",
+        recipients=recipients,
+    )
+    return 0 if sent else 1
+
+
 def run(argv: Sequence[str] | None = None) -> int:
     """Main entry point. Returns the desired process exit code."""
     args = _parse_args(argv)
@@ -388,6 +443,8 @@ def run(argv: Sequence[str] | None = None) -> int:
     now = datetime.now(timezone.utc)
     logger.info("Starting %s digest run at %s", args.mode, now.isoformat())
 
+    if args.mode == "ai-email-test":
+        return _run_ai_email_test(args.email_to, client)
     if args.mode == "weekly":
         _run_period_summary("weekly", now, client)
         return 0
