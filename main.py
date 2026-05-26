@@ -452,11 +452,19 @@ def _run_daily_digest(now: datetime, client, model: str) -> int:
         f"ArXiv 每日论文摘要 {digest.digest_date.isoformat()}",
     )
     if config.EMAIL_SEND_DAILY:
-        _send_digest_email(
-            subject=f"ArXiv 每日论文摘要 {digest.digest_date.isoformat()}",
-            rendered=rendered,
-            attachment_name=f"arxiv-daily-{digest.digest_date.isoformat()}.md",
-        )
+        if config.RECIPIENTS_BY_CATEGORY:
+            _send_subscription_emails(
+                entries=entries,
+                found_in_category=found_in_category,
+                digest_date=digest.digest_date,
+                subscriptions=config.RECIPIENTS_BY_CATEGORY,
+            )
+        else:
+            _send_digest_email(
+                subject=f"ArXiv 每日论文摘要 {digest.digest_date.isoformat()}",
+                rendered=rendered,
+                attachment_name=f"arxiv-daily-{digest.digest_date.isoformat()}.md",
+            )
 
     logger.info(
         "Digest complete: %d/%d papers summarised for %s",
