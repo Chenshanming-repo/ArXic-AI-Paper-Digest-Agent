@@ -4,12 +4,12 @@ from __future__ import annotations
 
 import logging
 import re
-import time
 import xml.etree.ElementTree as ET
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 import httpx
 
+from src.arxiv_client import ArxivApiClient, DEFAULT_USER_AGENT
 from src.models import Paper
 
 logger = logging.getLogger(__name__)
@@ -22,21 +22,7 @@ _NS = {
 
 _WS_RE = re.compile(r"\s+")
 
-# ArXiv asks API clients to identify themselves with a descriptive
-# User-Agent. Generic library UAs (e.g. python-httpx/x.y.z) get throttled
-# aggressively, especially from shared egress IPs like GitHub Actions runners.
-USER_AGENT = (
-    "ArxivDigestBot/0.1 "
-    "(+https://github.com/Kiraaa1/ArXic-AI-Paper-Digest-Agent)"
-)
-
-# Retry policy for transient ArXiv errors. Network errors (timeouts, etc.)
-# are also retried; see _request_with_retry below.
-_RETRY_STATUSES = {429, 500, 502, 503, 504}
-_MAX_ATTEMPTS = 4
-_BACKOFF_BASE_SECONDS = 10.0
-_BACKOFF_CAP_SECONDS = 60.0
-_REQUEST_TIMEOUT_SECONDS = 60.0
+USER_AGENT = DEFAULT_USER_AGENT
 
 
 def _normalise(text: str | None) -> str:
@@ -44,83 +30,6 @@ def _normalise(text: str | None) -> str:
     if text is None:
         return ""
     return _WS_RE.sub(" ", text).strip()
-
-
-def _backoff_seconds(attempt: int) -> float:
-    """Exponential backoff: 10s, 20s, 40s, ... capped at 60s."""
-    return min(_BACKOFF_BASE_SECONDS * (2 ** (attempt - 1)), _BACKOFF_CAP_SECONDS)
-
-
-def _retry_after_seconds(response: httpx.Response, attempt: int) -> float:
-    """Pick a wait time for the next retry.
-
-    Honours the server's `Retry-After` header when present, otherwise uses
-    exponential backoff.
-    """
-    header = response.headers.get("Retry-After")
-    if header:
-        try:
-            return max(0.0, float(header))
-        except ValueError:
-            pass
-    return _backoff_seconds(attempt)
-
-
-def _request_with_retry(
-    client: httpx.Client, api_url: str, params: dict[str, str]
-) -> str:
-    """GET the ArXiv API with retry/backoff on 429, 5xx, and network errors.
-
-    GitHub Actions egress IPs are shared and ArXiv frequently throttles or
-    times out requests from them. This loop covers both:
-      - HTTP-level retryable statuses (handled via `_RETRY_STATUSES`).
-      - Network-level errors (`httpx.RequestError`, e.g. `ReadTimeout`,
-        `ConnectTimeout`, transient connection resets).
-    """
-    last_response: httpx.Response | None = None
-    last_error: httpx.RequestError | None = None
-
-    for attempt in range(1, _MAX_ATTEMPTS + 1):
-        try:
-            response = client.get(api_url, params=params)
-        except httpx.RequestError as exc:
-            last_error = exc
-            if attempt >= _MAX_ATTEMPTS:
-                raise
-            wait = _backoff_seconds(attempt)
-            logger.warning(
-                "ArXiv request failed (%s: %s) on attempt %d/%d; "
-                "sleeping %.1fs before retry",
-                type(exc).__name__,
-                exc,
-                attempt,
-                _MAX_ATTEMPTS,
-                wait,
-            )
-            time.sleep(wait)
-            continue
-
-        last_response = response
-        if response.status_code in _RETRY_STATUSES and attempt < _MAX_ATTEMPTS:
-            wait = _retry_after_seconds(response, attempt)
-            logger.warning(
-                "ArXiv returned %d on attempt %d/%d; sleeping %.1fs before retry",
-                response.status_code,
-                attempt,
-                _MAX_ATTEMPTS,
-                wait,
-            )
-            time.sleep(wait)
-            continue
-        response.raise_for_status()
-        return response.text
-
-    # Exhausted retries. Re-raise the most informative failure.
-    if last_response is not None:
-        last_response.raise_for_status()
-        return last_response.text  # pragma: no cover - unreachable
-    assert last_error is not None  # pragma: no cover - retry loop guarantees one of these
-    raise last_error
 
 
 def _build_search_query(categories: list[str]) -> str:
@@ -135,6 +44,28 @@ def _build_search_query(categories: list[str]) -> str:
     return " OR ".join(f"cat:{cat}" for cat in categories)
 
 
+def build_category_query(categories: list[str]) -> str:
+    """Build an arXiv category query for CLI/config callers."""
+    return _build_search_query(categories)
+
+
+def build_recent_date_query(base_query: str, *, days: int, now: datetime | None = None) -> str:
+    """Build an arXiv query for recently submitted or updated papers."""
+    reference = now or datetime.now(timezone.utc)
+    if reference.tzinfo is None:
+        reference = reference.replace(tzinfo=timezone.utc)
+    else:
+        reference = reference.astimezone(timezone.utc)
+    start = reference - timedelta(days=days)
+    start_raw = start.strftime("%Y%m%d%H%M")
+    end_raw = reference.strftime("%Y%m%d%H%M")
+    date_query = (
+        f"(submittedDate:[{start_raw} TO {end_raw}] "
+        f"OR lastUpdatedDate:[{start_raw} TO {end_raw}])"
+    )
+    return f"({base_query}) AND {date_query}"
+
+
 def _paper_matches_topic(paper: Paper, topic_keywords: list[str]) -> bool:
     if not topic_keywords:
         return True
@@ -144,6 +75,7 @@ def _paper_matches_topic(paper: Paper, topic_keywords: list[str]) -> bool:
             paper.title,
             paper.abstract,
             paper.primary_category or "",
+            " ".join(paper.categories),
         ]
     ).casefold()
     return any(keyword.casefold() in haystack for keyword in topic_keywords)
@@ -155,6 +87,7 @@ def _parse_entry(entry: ET.Element) -> Paper | None:
     title_el = entry.find("atom:title", _NS)
     summary_el = entry.find("atom:summary", _NS)
     published_el = entry.find("atom:published", _NS)
+    updated_el = entry.find("atom:updated", _NS)
 
     if id_el is None or title_el is None or summary_el is None or published_el is None:
         return None
@@ -184,6 +117,17 @@ def _parse_entry(entry: ET.Element) -> Paper | None:
     else:
         published = published.astimezone(timezone.utc)
 
+    updated = None
+    if updated_el is not None and updated_el.text:
+        try:
+            updated = datetime.fromisoformat(updated_el.text.replace("Z", "+00:00"))
+            if updated.tzinfo is None:
+                updated = updated.replace(tzinfo=timezone.utc)
+            else:
+                updated = updated.astimezone(timezone.utc)
+        except ValueError:
+            updated = None
+
     authors: list[str] = []
     for author_el in entry.findall("atom:author", _NS):
         name_el = author_el.find("atom:name", _NS)
@@ -196,6 +140,23 @@ def _parse_entry(entry: ET.Element) -> Paper | None:
     primary_category = (
         primary_el.attrib.get("term") if primary_el is not None else None
     )
+    categories = [
+        category_el.attrib["term"]
+        for category_el in entry.findall("atom:category", _NS)
+        if category_el.attrib.get("term")
+    ]
+    if primary_category and primary_category not in categories:
+        categories.insert(0, primary_category)
+
+    pdf_url = None
+    for link_el in entry.findall("atom:link", _NS):
+        title = link_el.attrib.get("title", "")
+        href = link_el.attrib.get("href", "")
+        if title == "pdf" and href:
+            pdf_url = href.replace("http://", "https://", 1)
+            break
+    if pdf_url is None:
+        pdf_url = canonical_url.replace("/abs/", "/pdf/", 1)
 
     try:
         return Paper(
@@ -205,7 +166,10 @@ def _parse_entry(entry: ET.Element) -> Paper | None:
             authors=authors,
             abstract=_normalise(summary_el.text),
             published=published,
+            updated=updated,
             primary_category=primary_category,
+            categories=categories,
+            pdf_url=pdf_url,
         )
     except Exception as exc:  # pydantic ValidationError or similar
         logger.warning("Skipping malformed entry %s: %s", arxiv_id, exc)
@@ -219,6 +183,7 @@ def fetch_recent_papers(
     page_size: int,
     api_url: str,
     http_client: httpx.Client | None = None,
+    arxiv_client: ArxivApiClient | None = None,
 ) -> list[Paper]:
     """Fetch the most recent ArXiv submissions for the given categories.
 
@@ -243,29 +208,15 @@ def fetch_recent_papers(
         page_size,
     )
 
-    owns_client = http_client is None
-    client = http_client or httpx.Client(
-        timeout=_REQUEST_TIMEOUT_SECONDS,
-        follow_redirects=True,
-        headers={"User-Agent": USER_AGENT},
+    papers = fetch_papers_by_query(
+        query=params["search_query"],
+        max_results=page_size,
+        api_url=api_url,
+        sort_by=params["sortBy"],
+        sort_order=params["sortOrder"],
+        http_client=http_client,
+        arxiv_client=arxiv_client,
     )
-    try:
-        body = _request_with_retry(client, api_url, params)
-    finally:
-        if owns_client:
-            client.close()
-
-    try:
-        root = ET.fromstring(body)
-    except ET.ParseError as exc:
-        raise RuntimeError(f"Failed to parse ArXiv response as XML: {exc}") from exc
-
-    raw_entries = root.findall("atom:entry", _NS)
-    papers: list[Paper] = []
-    for entry in raw_entries:
-        paper = _parse_entry(entry)
-        if paper is not None:
-            papers.append(paper)
 
     if topic_keywords:
         before_count = len(papers)
@@ -280,9 +231,64 @@ def fetch_recent_papers(
         )
 
     logger.info(
-        "ArXiv returned %d entries, %d papers available after parsing/filtering",
-        len(raw_entries),
+        "ArXiv returned %d papers available after parsing/filtering",
         len(papers),
     )
 
     return papers
+
+
+def parse_atom_feed(body: str) -> list[Paper]:
+    """Parse an arXiv Atom XML response into paper metadata."""
+    try:
+        root = ET.fromstring(body)
+    except ET.ParseError as exc:
+        raise RuntimeError(f"Failed to parse ArXiv response as XML: {exc}") from exc
+
+    raw_entries = root.findall("atom:entry", _NS)
+    papers: list[Paper] = []
+    for entry in raw_entries:
+        paper = _parse_entry(entry)
+        if paper is not None:
+            papers.append(paper)
+
+    logger.info(
+        "ArXiv returned %d entries, %d parsed successfully",
+        len(raw_entries),
+        len(papers),
+    )
+    return papers
+
+
+def fetch_papers_by_query(
+    *,
+    query: str,
+    max_results: int,
+    api_url: str,
+    sort_by: str = "submittedDate",
+    sort_order: str = "descending",
+    start: int = 0,
+    http_client: httpx.Client | None = None,
+    arxiv_client: ArxivApiClient | None = None,
+) -> list[Paper]:
+    """Fetch paper metadata for a raw arXiv search query."""
+    params = {
+        "search_query": query,
+        "sortBy": sort_by,
+        "sortOrder": sort_order,
+        "max_results": str(max_results),
+        "start": str(start),
+    }
+
+    logger.info("Querying ArXiv query=%s max_results=%d", query, max_results)
+    if arxiv_client is not None:
+        body = arxiv_client.get(params)
+        return parse_atom_feed(body)
+
+    with ArxivApiClient(
+        api_url=api_url,
+        user_agent=USER_AGENT,
+        http_client=http_client,
+    ) as client:
+        body = client.get(params)
+        return parse_atom_feed(body)

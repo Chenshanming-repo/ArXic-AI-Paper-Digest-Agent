@@ -78,10 +78,19 @@ ARXIV_PAGE_SIZE: int = _env_int("ARXIV_PAGE_SIZE", 200)
 
 # ArXiv API endpoint. Use https; the http endpoint redirects.
 ARXIV_API_URL: str = "https://export.arxiv.org/api/query"
+ARXIV_USER_AGENT: str = os.getenv(
+    "ARXIV_USER_AGENT",
+    "LongReadPaperBot/0.1 (mailto:YOUR_EMAIL@example.com)",
+)
+ARXIV_RATE_LIMIT_SECONDS: float = float(os.getenv("ARXIV_RATE_LIMIT_SECONDS", "3.5"))
+ARXIV_RATE_LIMIT_JITTER_SECONDS: float = float(
+    os.getenv("ARXIV_RATE_LIMIT_JITTER_SECONDS", "1.5")
+)
+ARXIV_MAX_RETRIES: int = _env_int("ARXIV_MAX_RETRIES", 5)
 
-# OpenAI model used for summarisation. gpt-4o-mini is cheap and fast and
-# perfectly adequate for 2-3 sentence summaries.
-OPENAI_MODEL: str = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
+# OpenAI-compatible model used for summarisation. Use "auto" to query the
+# provider's /models endpoint and pick a suitable text model.
+OPENAI_MODEL: str = os.getenv("OPENAI_MODEL", "auto")
 
 # Optional OpenAI-compatible endpoint for third-party providers.
 OPENAI_BASE_URL: str | None = (
@@ -126,3 +135,4 @@ ARCHIVE_DIR: Path = DIGEST_DIR / "archive"
 DAILY_ARCHIVE_DIR: Path = ARCHIVE_DIR / "daily"
 WEEKLY_ARCHIVE_DIR: Path = ARCHIVE_DIR / "weekly"
 MONTHLY_ARCHIVE_DIR: Path = ARCHIVE_DIR / "monthly"
+METADATA_DB_FILE: Path = DIGEST_DIR / "arxiv_metadata.sqlite3"

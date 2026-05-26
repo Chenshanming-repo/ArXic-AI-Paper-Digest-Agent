@@ -110,6 +110,58 @@ To test both the AI endpoint and email delivery, run:
 python main.py --mode ai-email-test --email-to 1102643651@qq.com
 ```
 
+## Safe arXiv metadata crawling
+
+The crawler uses the official arXiv Atom API through `httpx`; it does not use
+the Python `arxiv` package and it does not download PDFs. Metadata is cached in
+SQLite at `digest/arxiv_metadata.sqlite3` and de-duplicated by arXiv id.
+
+The arXiv API client is intentionally conservative:
+
+- One HTTP connection is used for arXiv.
+- Requests are never parallelized.
+- Each arXiv API request waits at least `3.5s` plus random jitter by default.
+- HTTP `429`, `500`, `502`, `503`, and `504` are retried.
+- `Retry-After` is respected when present.
+- Otherwise retries use exponential backoff from `30s` up to `10min`, with
+  random `0-10s` jitter.
+- Retries are bounded by `ARXIV_MAX_RETRIES`, default `5`.
+
+Fetch metadata for a query:
+
+```bash
+python main.py fetch \
+  --query "cat:q-bio.* OR cat:cs.LG OR cat:cs.AI" \
+  --max-results 100
+```
+
+Fetch only recent submitted or updated papers:
+
+```bash
+python main.py fetch-daily --days 1
+```
+
+Use a custom metadata database:
+
+```bash
+python main.py fetch-daily --days 1 --db digest/my_arxiv_cache.sqlite3
+```
+
+Run the crawler tests:
+
+```bash
+python -m unittest discover -v
+```
+
+Set a real contact address in your User-Agent before running on a server:
+
+```env
+ARXIV_USER_AGENT=LongReadPaperBot/0.1 (mailto:you@example.com)
+ARXIV_RATE_LIMIT_SECONDS=3.5
+ARXIV_RATE_LIMIT_JITTER_SECONDS=1.5
+ARXIV_MAX_RETRIES=5
+```
+
 ## Linux server deployment
 
 On a Linux server, install Python and clone the project:
@@ -141,7 +193,7 @@ Required `.env` values:
 ```env
 API_KEY=your-openai-compatible-api-key
 BASE_URL=https://your-provider.example/v1
-OPENAI_MODEL=your-model-name
+OPENAI_MODEL=auto
 
 ARXIV_CATEGORIES=cs.AI,cs.LG,stat.ML,q-bio.QM,q-bio.GN
 ARXIV_TOPIC_KEYWORDS=deep learning,bioinformatics,genomics,protein,foundation model
@@ -197,7 +249,11 @@ by environment variables (see `.env.example`):
 | `ARXIV_TOPIC_KEYWORDS` | AI/deep learning/bioinformatics terms | User-chosen topic filter applied after fetching. |
 | `MAX_PAPERS`         | `0`                      | `0` means all fresh matching papers; positive values cap daily summaries. |
 | `ARXIV_PAGE_SIZE`    | `200`                    | How many recent ArXiv results to inspect before filtering. |
-| `OPENAI_MODEL`       | `gpt-4o-mini`            | OpenAI model used for summaries.                  |
+| `ARXIV_USER_AGENT`   | `LongReadPaperBot/0.1 (mailto:YOUR_EMAIL@example.com)` | Contactable User-Agent for arXiv API requests. |
+| `ARXIV_RATE_LIMIT_SECONDS` | `3.5`              | Minimum delay between arXiv API requests.         |
+| `ARXIV_RATE_LIMIT_JITTER_SECONDS` | `1.5`       | Random extra delay added to the rate limit.       |
+| `ARXIV_MAX_RETRIES`  | `5`                      | Retry count for transient arXiv API failures.     |
+| `OPENAI_MODEL`       | `auto`                   | `auto` lists provider models and tries stronger chat models first, e.g. GPT-5.5 before smaller fallbacks. |
 | `OPENAI_MAX_TOKENS`  | `300`                    | Max tokens per summary.                           |
 | `API_KEY`            | required                 | API key for OpenAI or a compatible provider.      |
 | `BASE_URL`           | unset                    | Optional OpenAI-compatible API base URL.          |
@@ -270,6 +326,8 @@ arxiv-digest/
 │       └── monthly/           # one file per monthly summary
 ├── src/
 │   ├── fetcher.py             # ArXiv API + Atom XML parsing
+│   ├── arxiv_client.py        # rate-limited arXiv HTTP client
+│   ├── storage.py             # SQLite metadata cache
 │   ├── emailer.py             # SMTP delivery for Markdown digests
 │   ├── summariser.py          # OpenAI API calls
 │   ├── rollup.py              # weekly/monthly digest history parsing
@@ -277,6 +335,7 @@ arxiv-digest/
 │   └── models.py              # Pydantic models: Paper, DigestEntry, Digest
 ├── main.py                    # orchestrator entry point
 ├── config.py                  # tuneable settings
+├── tests/                     # unit tests for crawler/client/storage
 ├── requirements.txt
 └── .env.example
 ```

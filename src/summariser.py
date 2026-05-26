@@ -3,8 +3,10 @@
 from __future__ import annotations
 
 import logging
+import json
 import re
 from collections.abc import Mapping, Sequence
+from typing import Any
 
 from openai import OpenAI, OpenAIError
 
@@ -36,6 +38,7 @@ ROLLUP_PROMPT_TEMPLATE = (
 )
 
 _WS_RE = re.compile(r"\s+")
+_HTML_RESPONSE_RE = re.compile(r"^\s*(?:<!doctype\s+html|<html[\s>])", re.IGNORECASE)
 _ROLLUP_SUMMARY_LIMIT = 420
 
 
@@ -45,6 +48,47 @@ def _build_user_prompt(paper: Paper) -> str:
 
 def _normalise(text: str) -> str:
     return _WS_RE.sub(" ", text).strip()
+
+
+def _reject_html_response(content: str) -> str:
+    if _HTML_RESPONSE_RE.search(content):
+        raise RuntimeError(
+            "AI provider returned an HTML page instead of a chat completion. "
+            "Check BASE_URL; OpenAI-compatible endpoints usually end with /v1."
+        )
+    return content
+
+
+def _extract_response_content(response: Any) -> str:
+    """Extract message content from OpenAI SDK or OpenAI-compatible responses."""
+    if isinstance(response, str):
+        try:
+            return _extract_response_content(json.loads(response))
+        except json.JSONDecodeError:
+            return _reject_html_response(response)
+
+    if isinstance(response, Mapping):
+        choices = response.get("choices")
+        if choices:
+            first_choice = choices[0]
+            if isinstance(first_choice, Mapping):
+                message = first_choice.get("message")
+                if isinstance(message, Mapping):
+                    return _reject_html_response(str(message.get("content") or ""))
+                return _reject_html_response(str(first_choice.get("text") or ""))
+        return _reject_html_response(
+            str(response.get("content") or response.get("text") or "")
+        )
+
+    choices = getattr(response, "choices", None)
+    if choices:
+        first_choice = choices[0]
+        message = getattr(first_choice, "message", None)
+        if message is not None:
+            return _reject_html_response(str(getattr(message, "content", "") or ""))
+        return _reject_html_response(str(getattr(first_choice, "text", "") or ""))
+
+    return _reject_html_response(str(getattr(response, "content", "") or ""))
 
 
 def _truncate(text: str, limit: int) -> str:
@@ -96,10 +140,7 @@ def summarise_paper(
         ],
     )
 
-    if not response.choices:
-        raise RuntimeError(f"No choices returned for paper {paper.arxiv_id}")
-
-    content = response.choices[0].message.content or ""
+    content = _extract_response_content(response)
     summary = _normalise(content)
     if not summary:
         raise RuntimeError(f"Empty summary returned for paper {paper.arxiv_id}")
@@ -127,10 +168,7 @@ def summarise_period(
         ],
     )
 
-    if not response.choices:
-        raise RuntimeError(f"No choices returned for period {period_name}")
-
-    content = response.choices[0].message.content or ""
+    content = _extract_response_content(response)
     summary = _normalise(content)
     if not summary:
         raise RuntimeError(f"Empty summary returned for period {period_name}")

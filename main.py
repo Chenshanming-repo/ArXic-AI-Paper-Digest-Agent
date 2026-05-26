@@ -17,10 +17,12 @@ from __future__ import annotations
 import argparse
 import logging
 import os
+import re
 import sys
 from collections.abc import Sequence
 from datetime import datetime, timezone
 from pathlib import Path
+from urllib.parse import urlsplit, urlunsplit
 
 from dotenv import load_dotenv
 
@@ -59,6 +61,46 @@ def _configure_logging() -> None:
 
 def _parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Generate ArXiv digest files.")
+    subparsers = parser.add_subparsers(dest="command")
+
+    fetch_parser = subparsers.add_parser("fetch", help="Fetch arXiv metadata.")
+    fetch_parser.add_argument("--query", required=True, help="Raw arXiv search query.")
+    fetch_parser.add_argument("--max-results", type=int, default=100)
+    fetch_parser.add_argument("--start", type=int, default=0)
+    fetch_parser.add_argument("--sort-by", default="submittedDate")
+    fetch_parser.add_argument("--sort-order", default="descending")
+    fetch_parser.add_argument("--db", type=Path, default=config.METADATA_DB_FILE)
+    fetch_parser.add_argument("--api-url", default=config.ARXIV_API_URL)
+    fetch_parser.add_argument("--user-agent", default=config.ARXIV_USER_AGENT)
+    fetch_parser.add_argument(
+        "--min-interval",
+        type=float,
+        default=config.ARXIV_RATE_LIMIT_SECONDS,
+        help="Minimum seconds between arXiv API requests.",
+    )
+    fetch_parser.add_argument(
+        "--max-retries", type=int, default=config.ARXIV_MAX_RETRIES
+    )
+
+    daily_parser = subparsers.add_parser(
+        "fetch-daily", help="Fetch recent submitted/updated arXiv metadata."
+    )
+    daily_parser.add_argument("--days", type=int, default=1)
+    daily_parser.add_argument("--query", default=None)
+    daily_parser.add_argument("--max-results", type=int, default=config.ARXIV_PAGE_SIZE)
+    daily_parser.add_argument("--db", type=Path, default=config.METADATA_DB_FILE)
+    daily_parser.add_argument("--api-url", default=config.ARXIV_API_URL)
+    daily_parser.add_argument("--user-agent", default=config.ARXIV_USER_AGENT)
+    daily_parser.add_argument(
+        "--min-interval",
+        type=float,
+        default=config.ARXIV_RATE_LIMIT_SECONDS,
+        help="Minimum seconds between arXiv API requests.",
+    )
+    daily_parser.add_argument(
+        "--max-retries", type=int, default=config.ARXIV_MAX_RETRIES
+    )
+
     parser.add_argument(
         "--mode",
         choices=[
@@ -108,9 +150,121 @@ def _build_openai_client(api_key: str):
 
     kwargs: dict[str, str] = {"api_key": api_key}
     if config.OPENAI_BASE_URL:
-        kwargs["base_url"] = config.OPENAI_BASE_URL
-        logger.info("Using OpenAI-compatible base URL: %s", config.OPENAI_BASE_URL)
+        base_url = _normalise_openai_base_url(config.OPENAI_BASE_URL)
+        kwargs["base_url"] = base_url
+        logger.info("Using OpenAI-compatible base URL: %s", base_url)
     return OpenAI(**kwargs)
+
+
+def _extract_model_ids(models_response) -> list[str]:
+    data = getattr(models_response, "data", None)
+    if data is None and isinstance(models_response, dict):
+        data = models_response.get("data")
+    if not data:
+        return []
+
+    model_ids: list[str] = []
+    for item in data:
+        model_id = getattr(item, "id", None)
+        if model_id is None and isinstance(item, dict):
+            model_id = item.get("id")
+        if model_id:
+            model_ids.append(str(model_id))
+    return model_ids
+
+
+def _is_text_model(model_id: str) -> bool:
+    lowered = model_id.lower()
+    blocked_terms = [
+        "image",
+        "embedding",
+        "moderation",
+        "whisper",
+        "tts",
+        "audio",
+        "rerank",
+    ]
+    return not any(term in lowered for term in blocked_terms)
+
+
+def _model_power_score(model_id: str) -> int:
+    lowered = model_id.lower()
+    score = 0
+    match = re.search(r"gpt-(\d)(?:\.(\d))?", lowered)
+    if match:
+        major = int(match.group(1))
+        minor = int(match.group(2) or 0)
+        score = major * 1000 + minor * 100
+    elif "claude" in lowered or "gemini" in lowered:
+        score = 3000
+
+    if "mini" in lowered:
+        score -= 50
+    if "compact" in lowered:
+        score -= 60
+    if "codex" in lowered:
+        score -= 100
+    if "spark" in lowered:
+        score -= 120
+    return score
+
+
+def _rank_auto_models(model_ids: list[str]) -> list[str]:
+    text_models = [model_id for model_id in model_ids if _is_text_model(model_id)]
+    if not text_models:
+        raise RuntimeError("OPENAI_MODEL=auto could not find any text models.")
+    return sorted(text_models, key=_model_power_score, reverse=True)
+
+
+def _model_accepts_chat_completion(client, model: str) -> bool:
+    from src.summariser import _extract_response_content
+
+    try:
+        response = client.chat.completions.create(
+            model=model,
+            max_tokens=8,
+            messages=[
+                {"role": "system", "content": "Reply briefly."},
+                {"role": "user", "content": "ping"},
+            ],
+        )
+    except Exception as exc:
+        logger.info("Auto model candidate failed: %s (%s)", model, exc)
+        return False
+
+    try:
+        _extract_response_content(response)
+    except RuntimeError as exc:
+        logger.info("Auto model candidate returned invalid content: %s (%s)", model, exc)
+        return False
+    return True
+
+
+def _resolve_openai_model(client) -> str:
+    configured = config.OPENAI_MODEL.strip()
+    if configured and configured.lower() not in {"auto", "default"}:
+        return configured
+
+    models_response = client.models.list()
+    model_ids = _extract_model_ids(models_response)
+    candidates = _rank_auto_models(model_ids)
+    logger.info("Auto model candidates by preference: %s", candidates)
+    for model in candidates:
+        if _model_accepts_chat_completion(client, model):
+            logger.info("Auto-selected OpenAI-compatible model: %s", model)
+            return model
+
+    raise RuntimeError("OPENAI_MODEL=auto could not find a usable chat model.")
+
+
+def _normalise_openai_base_url(raw_base_url: str) -> str:
+    """Append /v1 when a provider host is given without an API path."""
+    parsed = urlsplit(raw_base_url.strip().rstrip("/"))
+    if not parsed.scheme or not parsed.netloc:
+        return raw_base_url
+    if parsed.path in {"", "/"}:
+        return urlunsplit((parsed.scheme, parsed.netloc, "/v1", "", ""))
+    return raw_base_url.rstrip("/")
 
 
 def _daily_archive_path(digest_date) -> Path:
@@ -156,17 +310,25 @@ def _send_digest_email(
         return False
 
 
-def _run_daily_digest(now: datetime, client) -> int:
+def _run_daily_digest(now: datetime, client, model: str) -> int:
     from src.fetcher import fetch_recent_papers
     from src.models import Digest
     from src.summariser import summarise_papers
 
-    fetched = fetch_recent_papers(
-        categories=config.CATEGORIES,
-        topic_keywords=config.TOPIC_KEYWORDS,
-        page_size=config.ARXIV_PAGE_SIZE,
+    arxiv_args = argparse.Namespace(
         api_url=config.ARXIV_API_URL,
+        user_agent=config.ARXIV_USER_AGENT,
+        min_interval=config.ARXIV_RATE_LIMIT_SECONDS,
+        max_retries=config.ARXIV_MAX_RETRIES,
     )
+    with _build_arxiv_client(arxiv_args) as arxiv_client:
+        fetched = fetch_recent_papers(
+            categories=config.CATEGORIES,
+            topic_keywords=config.TOPIC_KEYWORDS,
+            page_size=config.ARXIV_PAGE_SIZE,
+            api_url=config.ARXIV_API_URL,
+            arxiv_client=arxiv_client,
+        )
 
     if not fetched:
         logger.info(
@@ -175,6 +337,17 @@ def _run_daily_digest(now: datetime, client) -> int:
             config.CATEGORIES,
         )
         return 0
+
+    try:
+        new_count, updated_count = _store_fetched_papers(fetched, config.METADATA_DB_FILE)
+        logger.info(
+            "Cached daily metadata in %s (%d new, %d already cached/updated)",
+            config.METADATA_DB_FILE,
+            new_count,
+            updated_count,
+        )
+    except Exception as exc:
+        logger.warning("Could not update local arXiv metadata cache: %s", exc)
 
     seen_ids = read_seen_arxiv_ids(config.DIGEST_FILE)
     fresh = [p for p in fetched if p.arxiv_id not in seen_ids]
@@ -199,20 +372,20 @@ def _run_daily_digest(now: datetime, client) -> int:
             "Summarising %d/%d fresh papers with model %s",
             len(papers),
             len(fresh),
-            config.OPENAI_MODEL,
+            model,
         )
     else:
         papers = fresh
         logger.info(
             "Summarising all %d fresh matching papers with model %s",
             len(papers),
-            config.OPENAI_MODEL,
+            model,
         )
 
     entries = summarise_papers(
         papers,
         client=client,
-        model=config.OPENAI_MODEL,
+        model=model,
         max_tokens=config.OPENAI_MAX_TOKENS,
     )
 
@@ -253,7 +426,7 @@ def _period_label(start_date, end_date) -> str:
     return f"{start_date.isoformat()} 至 {end_date.isoformat()}"
 
 
-def _run_period_summary(kind: str, now: datetime, client) -> bool:
+def _run_period_summary(kind: str, now: datetime, client, model: str) -> bool:
     from openai import OpenAIError
 
     from src.summariser import summarise_period
@@ -301,7 +474,7 @@ def _run_period_summary(kind: str, now: datetime, client) -> bool:
             [record.as_prompt_record() for record in records],
             period_name=period_name,
             client=client,
-            model=config.OPENAI_MODEL,
+            model=model,
             max_tokens=config.ROLLUP_MAX_TOKENS,
         )
     except (OpenAIError, RuntimeError, ValueError) as exc:
@@ -327,11 +500,13 @@ def _run_period_summary(kind: str, now: datetime, client) -> bool:
     return True
 
 
-def _run_due_rollups(now: datetime, client, *, force: bool = False) -> None:
+def _run_due_rollups(
+    now: datetime, client, model: str, *, force: bool = False
+) -> None:
     if config.ENABLE_WEEKLY_SUMMARY and (force or now.weekday() == 0):
-        _run_period_summary("weekly", now, client)
+        _run_period_summary("weekly", now, client, model)
     if config.ENABLE_MONTHLY_SUMMARY and (force or now.day == 1):
-        _run_period_summary("monthly", now, client)
+        _run_period_summary("monthly", now, client, model)
 
 
 def _run_archive_backfill() -> int:
@@ -350,6 +525,79 @@ def _run_archive_backfill() -> int:
 
     logger.info("Backfilled %d daily archive files", len(grouped))
     return 0
+
+
+def _build_arxiv_client(args: argparse.Namespace):
+    from src.arxiv_client import ArxivApiClient, ArxivRateLimiter
+
+    limiter = ArxivRateLimiter(
+        min_interval_seconds=args.min_interval,
+        jitter_seconds=config.ARXIV_RATE_LIMIT_JITTER_SECONDS,
+    )
+    return ArxivApiClient(
+        api_url=args.api_url,
+        user_agent=args.user_agent,
+        max_retries=args.max_retries,
+        rate_limiter=limiter,
+    )
+
+
+def _store_fetched_papers(papers, db_path: Path) -> tuple[int, int]:
+    from src.storage import PaperMetadataStore
+
+    with PaperMetadataStore(db_path) as store:
+        return store.upsert_papers(papers)
+
+
+def _run_fetch_command(args: argparse.Namespace) -> int:
+    from src.fetcher import fetch_papers_by_query
+
+    try:
+        with _build_arxiv_client(args) as arxiv_client:
+            papers = fetch_papers_by_query(
+                query=args.query,
+                max_results=args.max_results,
+                api_url=args.api_url,
+                sort_by=args.sort_by,
+                sort_order=args.sort_order,
+                start=args.start,
+                arxiv_client=arxiv_client,
+            )
+    except Exception:
+        logger.exception("arXiv fetch command failed")
+        return 1
+
+    new_count, updated_count = _store_fetched_papers(papers, args.db)
+    logger.info(
+        "Stored %d papers in %s (%d new, %d already cached/updated)",
+        len(papers),
+        args.db,
+        new_count,
+        updated_count,
+    )
+    return 0
+
+
+def _run_fetch_daily_command(args: argparse.Namespace) -> int:
+    from src.fetcher import build_category_query, build_recent_date_query
+
+    base_query = args.query or build_category_query(config.CATEGORIES)
+    query = build_recent_date_query(base_query, days=args.days)
+    logger.info("Daily arXiv metadata query: %s", query)
+
+    fetch_args = argparse.Namespace(
+        query=query,
+        max_results=args.max_results,
+        start=0,
+        sort_by="lastUpdatedDate",
+        sort_order="descending",
+        db=args.db,
+        api_url=args.api_url,
+        user_agent=args.user_agent,
+        min_interval=args.min_interval,
+        max_retries=args.max_retries,
+    )
+    return _run_fetch_command(fetch_args)
 
 
 def _run_email_test(email_to: str | None) -> int:
@@ -379,7 +627,7 @@ def _run_email_test(email_to: str | None) -> int:
     return 0 if sent else 1
 
 
-def _run_ai_email_test(email_to: str | None, client) -> int:
+def _run_ai_email_test(email_to: str | None, client, model: str) -> int:
     from src.models import Digest, DigestEntry, Paper
     from src.summariser import summarise_paper
 
@@ -408,7 +656,7 @@ def _run_ai_email_test(email_to: str | None, client) -> int:
     summary = summarise_paper(
         paper,
         client=client,
-        model=config.OPENAI_MODEL,
+        model=model,
         max_tokens=config.OPENAI_MAX_TOKENS,
     )
     rendered = render_digest(
@@ -432,6 +680,11 @@ def run(argv: Sequence[str] | None = None) -> int:
     load_dotenv()
     _configure_logging()
 
+    if args.command == "fetch":
+        return _run_fetch_command(args)
+    if args.command == "fetch-daily":
+        return _run_fetch_daily_command(args)
+
     if args.mode == "archive":
         return _run_archive_backfill()
     if args.mode == "email-test":
@@ -439,21 +692,22 @@ def run(argv: Sequence[str] | None = None) -> int:
 
     api_key = _require_api_key()
     client = _build_openai_client(api_key)
+    model = _resolve_openai_model(client)
 
     now = datetime.now(timezone.utc)
     logger.info("Starting %s digest run at %s", args.mode, now.isoformat())
 
     if args.mode == "ai-email-test":
-        return _run_ai_email_test(args.email_to, client)
+        return _run_ai_email_test(args.email_to, client, model)
     if args.mode == "weekly":
-        _run_period_summary("weekly", now, client)
+        _run_period_summary("weekly", now, client, model)
         return 0
     if args.mode == "monthly":
-        _run_period_summary("monthly", now, client)
+        _run_period_summary("monthly", now, client, model)
         return 0
 
-    exit_code = _run_daily_digest(now, client)
-    _run_due_rollups(now, client, force=args.force_rollups)
+    exit_code = _run_daily_digest(now, client, model)
+    _run_due_rollups(now, client, model, force=args.force_rollups)
     return exit_code
 
 

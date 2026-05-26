@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from datetime import datetime, date
+from typing import Optional
 
 from pydantic import BaseModel, Field, HttpUrl
 
@@ -16,9 +17,16 @@ class Paper(BaseModel):
     authors: list[str] = Field(..., description="Ordered list of author names.")
     abstract: str = Field(..., description="Paper abstract with whitespace normalised.")
     published: datetime = Field(..., description="UTC submission timestamp.")
-    primary_category: str | None = Field(
+    updated: Optional[datetime] = Field(
+        default=None, description="UTC updated timestamp from arXiv."
+    )
+    primary_category: Optional[str] = Field(
         default=None, description="Primary ArXiv category, e.g. 'cs.AI'."
     )
+    categories: list[str] = Field(
+        default_factory=list, description="All arXiv categories listed on the entry."
+    )
+    pdf_url: Optional[str] = Field(default=None, description="Canonical PDF URL.")
 
 
 class DigestEntry(BaseModel):
