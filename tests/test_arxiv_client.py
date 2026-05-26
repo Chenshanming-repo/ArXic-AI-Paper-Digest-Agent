@@ -62,6 +62,16 @@ class ArxivApiClientHttpClientTest(unittest.TestCase):
         finally:
             client.close()
 
+    def test_default_retry_and_backoff_match_upstream(self) -> None:
+        client = ArxivApiClient(api_url="https://export.arxiv.org/api/query")
+        try:
+            self.assertEqual(client.max_retries, 3)
+            self.assertEqual(client.backoff_base_seconds, 10.0)
+            self.assertEqual(client.backoff_max_seconds, 60.0)
+            self.assertEqual(client.backoff_jitter_seconds, 0.0)
+        finally:
+            client.close()
+
 
 class ArxivApiClientRetryTest(unittest.TestCase):
     def test_retries_429_then_succeeds(self) -> None:

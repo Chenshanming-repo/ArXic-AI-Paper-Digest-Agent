@@ -40,6 +40,10 @@ def _markdown_to_html(markdown: str) -> str:
             close_list()
             body.append("<hr>")
             continue
+        if line.startswith("#### "):
+            close_list()
+            body.append(f"<h4>{_inline_markdown_to_html(line[5:])}</h4>")
+            continue
         if line.startswith("### "):
             close_list()
             body.append(f"<h3>{_inline_markdown_to_html(line[4:])}</h3>")
@@ -88,13 +92,14 @@ def _html_document(markdown: str) -> str:
       border: 1px solid #d0d7de;
       border-radius: 8px;
     }}
-    h1, h2, h3 {{
+    h1, h2, h3, h4 {{
       color: #0f172a;
       line-height: 1.3;
     }}
     h1 {{ font-size: 24px; }}
     h2 {{ font-size: 20px; margin-top: 24px; }}
     h3 {{ font-size: 17px; margin-top: 22px; }}
+    h4 {{ font-size: 15px; margin-top: 18px; }}
     p {{ margin: 8px 0; }}
     a {{ color: #0969da; }}
     hr {{

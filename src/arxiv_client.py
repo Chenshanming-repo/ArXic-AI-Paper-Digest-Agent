@@ -14,7 +14,10 @@ import httpx
 logger = logging.getLogger(__name__)
 
 RETRY_STATUSES = {429, 500, 502, 503, 504}
-DEFAULT_USER_AGENT = "LongReadPaperBot/0.1 (mailto:YOUR_EMAIL@example.com)"
+DEFAULT_USER_AGENT = (
+    "ArxivDigestBot/0.1 "
+    "(+https://github.com/Kiraaa1/ArXic-AI-Paper-Digest-Agent)"
+)
 
 
 class ArxivRateLimiter:
@@ -81,10 +84,10 @@ class ArxivApiClient:
         api_url: str,
         user_agent: str = DEFAULT_USER_AGENT,
         timeout_seconds: float = 60.0,
-        max_retries: int = 5,
-        backoff_base_seconds: float = 30.0,
-        backoff_max_seconds: float = 600.0,
-        backoff_jitter_seconds: float = 10.0,
+        max_retries: int = 3,
+        backoff_base_seconds: float = 10.0,
+        backoff_max_seconds: float = 60.0,
+        backoff_jitter_seconds: float = 0.0,
         rate_limiter: ArxivRateLimiter | None = None,
         http_client: httpx.Client | None = None,
         sleeper: Callable[[float], None] = time.sleep,

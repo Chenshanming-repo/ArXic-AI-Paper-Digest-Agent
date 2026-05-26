@@ -322,7 +322,7 @@ def _run_daily_digest(now: datetime, client, model: str) -> int:
         max_retries=config.ARXIV_MAX_RETRIES,
     )
     with _build_arxiv_client(arxiv_args) as arxiv_client:
-        fetched = fetch_recent_papers(
+        fetched, found_in_category = fetch_recent_papers(
             categories=config.CATEGORIES,
             topic_keywords=config.TOPIC_KEYWORDS,
             page_size=config.ARXIV_PAGE_SIZE,
@@ -397,7 +397,11 @@ def _run_daily_digest(now: datetime, client, model: str) -> int:
         return 0
 
     digest = Digest(digest_date=now.date(), entries=entries)
-    rendered = render_digest(digest)
+    rendered = render_digest(
+        digest,
+        category_by_id=found_in_category,
+        category_order=list(config.CATEGORIES),
+    )
 
     append_to_digest(config.DIGEST_FILE, rendered)
     write_latest(config.LATEST_FILE, rendered)

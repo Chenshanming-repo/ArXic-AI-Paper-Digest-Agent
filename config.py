@@ -80,13 +80,13 @@ ARXIV_PAGE_SIZE: int = _env_int("ARXIV_PAGE_SIZE", 200)
 ARXIV_API_URL: str = "https://export.arxiv.org/api/query"
 ARXIV_USER_AGENT: str = os.getenv(
     "ARXIV_USER_AGENT",
-    "LongReadPaperBot/0.1 (mailto:YOUR_EMAIL@example.com)",
+    "ArxivDigestBot/0.1 (+https://github.com/Kiraaa1/ArXic-AI-Paper-Digest-Agent)",
 )
 ARXIV_RATE_LIMIT_SECONDS: float = float(os.getenv("ARXIV_RATE_LIMIT_SECONDS", "3.5"))
 ARXIV_RATE_LIMIT_JITTER_SECONDS: float = float(
     os.getenv("ARXIV_RATE_LIMIT_JITTER_SECONDS", "1.5")
 )
-ARXIV_MAX_RETRIES: int = _env_int("ARXIV_MAX_RETRIES", 5)
+ARXIV_MAX_RETRIES: int = _env_int("ARXIV_MAX_RETRIES", 3)
 
 # OpenAI-compatible model used for summarisation. Use "auto" to query the
 # provider's /models endpoint and pick a suitable text model.

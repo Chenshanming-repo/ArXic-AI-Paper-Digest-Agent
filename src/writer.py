@@ -24,24 +24,61 @@ def _format_authors(authors: list[str]) -> str:
     return ", ".join(authors)
 
 
-def _render_entry(index: int, entry: DigestEntry) -> str:
+def _render_entry(index: int, entry: DigestEntry, *, heading: str = "###") -> str:
     paper = entry.paper
     return (
-        f"### {index}. {paper.title}\n"
+        f"{heading} {index}. {paper.title}\n"
         f"**作者:** {_format_authors(paper.authors)}\n"
         f"**链接:** {paper.url}\n"
         f"**摘要:** {entry.summary}\n"
     )
 
 
-def render_digest(digest: Digest) -> str:
-    """Render a Digest as a Markdown section with a leading separator."""
+def render_digest(
+    digest: Digest,
+    *,
+    category_by_id: dict[str, str] | None = None,
+    category_order: list[str] | None = None,
+) -> str:
+    """Render a Digest as a Markdown section with a leading separator.
+
+    When `category_by_id` and `category_order` are both supplied, entries
+    are grouped under one ``### <category>`` heading per category, in the
+    order given. Entries whose arxiv_id is missing from `category_by_id`
+    fall into a trailing ``### 其他`` section. When either argument is
+    omitted the original flat layout is preserved.
+    """
     if not digest.entries:
         raise ValueError("Cannot render a digest with no entries.")
 
     lines: list[str] = ["---", f"## {digest.digest_date.isoformat()}", ""]
-    for index, entry in enumerate(digest.entries, start=1):
-        lines.append(_render_entry(index, entry))
+
+    if category_by_id is not None and category_order:
+        grouped: dict[str, list[DigestEntry]] = {cat: [] for cat in category_order}
+        leftovers: list[DigestEntry] = []
+        for entry in digest.entries:
+            category = category_by_id.get(entry.paper.arxiv_id)
+            if category in grouped:
+                grouped[category].append(entry)
+            else:
+                leftovers.append(entry)
+
+        def emit_section(header: str, entries: list[DigestEntry]) -> None:
+            lines.append(f"### {header}")
+            lines.append("")
+            for index, entry in enumerate(entries, start=1):
+                lines.append(_render_entry(index, entry, heading="####"))
+
+        for category in category_order:
+            entries = grouped[category]
+            if entries:
+                emit_section(category, entries)
+        if leftovers:
+            emit_section("其他", leftovers)
+    else:
+        for index, entry in enumerate(digest.entries, start=1):
+            lines.append(_render_entry(index, entry))
+
     return "\n".join(lines).rstrip() + "\n"
 
 

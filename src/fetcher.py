@@ -184,23 +184,28 @@ def fetch_recent_papers(
     api_url: str,
     http_client: httpx.Client | None = None,
     arxiv_client: ArxivApiClient | None = None,
-) -> list[Paper]:
+) -> tuple[list[Paper], dict[str, str]]:
     """Fetch the most recent ArXiv submissions for the given categories.
 
-    Returns up to `page_size` papers sorted by submission date, newest first.
-    No time-window filtering is applied here: the caller is responsible for
-    deduplication and capping the final list. If `topic_keywords` is provided,
-    parsed papers are also filtered by title/abstract text so broad ArXiv
-    categories only emit the configured subject areas. Network and parsing
-    errors are surfaced to the caller.
+    Issues one query per category, then dedupes by arxiv_id and re-sorts by
+    `published` descending so the result resembles a single combined feed.
+    Long ``cat:a OR cat:b OR ...`` queries are routed by arXiv's API as a
+    single "long search" and are sometimes rejected on shared egress IPs;
+    splitting per-category sidesteps that limit and still respects the
+    polite rate limit through the shared ``ArxivApiClient``.
+
+    Returns a `(papers, found_in_category)` tuple where `found_in_category`
+    maps each emitted `arxiv_id` to the configured category that first
+    surfaced it. Callers can use this to group rendered output by category.
+
+    `page_size` is applied per category. The caller is responsible for
+    further capping (`MAX_PAPERS`) and deduplication against prior runs.
+    Network and parsing errors are surfaced to the caller. If
+    `topic_keywords` is provided, parsed papers are filtered by
+    title/abstract text after the per-category fan-out.
     """
-    params = {
-        "search_query": _build_search_query(categories),
-        "sortBy": "submittedDate",
-        "sortOrder": "descending",
-        "max_results": str(page_size),
-        "start": "0",
-    }
+    if not categories:
+        raise ValueError("At least one ArXiv category must be configured.")
 
     logger.info(
         "Querying ArXiv for categories=%s page_size=%d",
@@ -208,21 +213,36 @@ def fetch_recent_papers(
         page_size,
     )
 
-    papers = fetch_papers_by_query(
-        query=params["search_query"],
-        max_results=page_size,
-        api_url=api_url,
-        sort_by=params["sortBy"],
-        sort_order=params["sortOrder"],
-        http_client=http_client,
-        arxiv_client=arxiv_client,
-    )
+    found_in_category: dict[str, str] = {}
+    collected: list[Paper] = []
+    for category in categories:
+        chunk = fetch_papers_by_query(
+            query=f"cat:{category}",
+            max_results=page_size,
+            api_url=api_url,
+            http_client=http_client,
+            arxiv_client=arxiv_client,
+        )
+        for paper in chunk:
+            if paper.arxiv_id in found_in_category:
+                continue
+            found_in_category[paper.arxiv_id] = category
+            collected.append(paper)
+
+    collected.sort(key=lambda p: p.published, reverse=True)
+    papers = collected
 
     if topic_keywords:
         before_count = len(papers)
         papers = [
             paper for paper in papers if _paper_matches_topic(paper, topic_keywords)
         ]
+        kept_ids = {paper.arxiv_id for paper in papers}
+        found_in_category = {
+            arxiv_id: category
+            for arxiv_id, category in found_in_category.items()
+            if arxiv_id in kept_ids
+        }
         logger.info(
             "Topic filter kept %d/%d papers using keywords=%s",
             len(papers),
@@ -235,7 +255,7 @@ def fetch_recent_papers(
         len(papers),
     )
 
-    return papers
+    return papers, found_in_category
 
 
 def parse_atom_feed(body: str) -> list[Paper]:
@@ -270,6 +290,7 @@ def fetch_papers_by_query(
     start: int = 0,
     http_client: httpx.Client | None = None,
     arxiv_client: ArxivApiClient | None = None,
+    user_agent: str = USER_AGENT,
 ) -> list[Paper]:
     """Fetch paper metadata for a raw arXiv search query."""
     params = {
@@ -287,7 +308,7 @@ def fetch_papers_by_query(
 
     with ArxivApiClient(
         api_url=api_url,
-        user_agent=USER_AGENT,
+        user_agent=user_agent,
         http_client=http_client,
     ) as client:
         body = client.get(params)
