@@ -89,6 +89,7 @@ class ArxivApiClient:
         http_client: httpx.Client | None = None,
         sleeper: Callable[[float], None] = time.sleep,
         jitter_fn: Callable[[], float] | None = None,
+        trust_env: bool = False,
     ) -> None:
         self.api_url = api_url
         self.max_retries = max_retries
@@ -106,6 +107,7 @@ class ArxivApiClient:
             follow_redirects=True,
             headers={"User-Agent": user_agent},
             limits=httpx.Limits(max_connections=1, max_keepalive_connections=1),
+            trust_env=trust_env,
         )
 
     def close(self) -> None:

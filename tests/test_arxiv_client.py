@@ -44,6 +44,25 @@ class ArxivRateLimiterTest(unittest.TestCase):
         self.assertEqual(sleeps, [3.5])
 
 
+class ArxivApiClientHttpClientTest(unittest.TestCase):
+    def test_owned_client_ignores_system_proxy_by_default(self) -> None:
+        client = ArxivApiClient(api_url="https://export.arxiv.org/api/query")
+        try:
+            self.assertFalse(client._client.trust_env)
+        finally:
+            client.close()
+
+    def test_owned_client_can_opt_into_environment_proxies(self) -> None:
+        client = ArxivApiClient(
+            api_url="https://export.arxiv.org/api/query",
+            trust_env=True,
+        )
+        try:
+            self.assertTrue(client._client.trust_env)
+        finally:
+            client.close()
+
+
 class ArxivApiClientRetryTest(unittest.TestCase):
     def test_retries_429_then_succeeds(self) -> None:
         sleeps: list[float] = []
