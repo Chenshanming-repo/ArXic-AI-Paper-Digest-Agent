@@ -46,6 +46,15 @@ class FetchPapersByQueryUserAgentTest(unittest.TestCase):
         )
 
 
+class _RecordingArxivClient:
+    def __init__(self) -> None:
+        self.requests: list[dict[str, str]] = []
+
+    def get(self, params: dict[str, str]) -> str:
+        self.requests.append(dict(params))
+        return params["start"]
+
+
 def _paper(arxiv_id: str, *, published: datetime, primary: str) -> Paper:
     return Paper(
         arxiv_id=arxiv_id,
@@ -56,6 +65,33 @@ def _paper(arxiv_id: str, *, published: datetime, primary: str) -> Paper:
         published=published,
         primary_category=primary,
     )
+
+
+class FetchPapersByQueryPaginationTest(unittest.TestCase):
+    def test_paginates_requests_in_five_result_chunks(self) -> None:
+        ts = datetime(2026, 5, 26, 10, 0, tzinfo=timezone.utc)
+        arxiv_client = _RecordingArxivClient()
+
+        def fake_parse_atom_feed(body: str) -> list[Paper]:
+            return [_paper(f"paper-{body}", published=ts, primary="cs.AI")]
+
+        with mock.patch.object(fetcher, "parse_atom_feed", fake_parse_atom_feed):
+            papers = fetcher.fetch_papers_by_query(
+                query="cat:cs.AI",
+                max_results=12,
+                api_url="https://export.arxiv.org/api/query",
+                start=3,
+                arxiv_client=arxiv_client,
+            )
+
+        self.assertEqual(
+            [(req["max_results"], req["start"]) for req in arxiv_client.requests],
+            [("5", "3"), ("5", "8"), ("2", "13")],
+        )
+        self.assertEqual(
+            [paper.arxiv_id for paper in papers],
+            ["paper-3", "paper-8", "paper-13"],
+        )
 
 
 class FetchRecentPapersPerCategoryTest(unittest.TestCase):
@@ -106,4 +142,3 @@ class FetchRecentPapersPerCategoryTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
-

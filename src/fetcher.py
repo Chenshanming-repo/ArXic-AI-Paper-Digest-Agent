@@ -23,6 +23,7 @@ _NS = {
 _WS_RE = re.compile(r"\s+")
 
 USER_AGENT = DEFAULT_USER_AGENT
+ARXIV_MAX_RESULTS_PER_REQUEST = 5
 
 
 def _normalise(text: str | None) -> str:
@@ -293,23 +294,52 @@ def fetch_papers_by_query(
     user_agent: str = USER_AGENT,
 ) -> list[Paper]:
     """Fetch paper metadata for a raw arXiv search query."""
-    params = {
-        "search_query": query,
-        "sortBy": sort_by,
-        "sortOrder": sort_order,
-        "max_results": str(max_results),
-        "start": str(start),
-    }
+    if max_results <= 0:
+        logger.info(
+            "Skipping ArXiv query=%s because max_results=%d",
+            query,
+            max_results,
+        )
+        return []
 
-    logger.info("Querying ArXiv query=%s max_results=%d", query, max_results)
+    def fetch_with_client(client: ArxivApiClient) -> list[Paper]:
+        papers: list[Paper] = []
+        remaining = max_results
+        current_start = start
+
+        while remaining > 0:
+            request_size = min(ARXIV_MAX_RESULTS_PER_REQUEST, remaining)
+            params = {
+                "search_query": query,
+                "sortBy": sort_by,
+                "sortOrder": sort_order,
+                "max_results": str(request_size),
+                "start": str(current_start),
+            }
+
+            logger.info(
+                "Querying ArXiv query=%s max_results=%d start=%d",
+                query,
+                request_size,
+                current_start,
+            )
+            body = client.get(params)
+            chunk = parse_atom_feed(body)
+            if not chunk:
+                break
+            papers.extend(chunk)
+            remaining -= request_size
+            current_start += request_size
+
+        return papers
+
+    logger.info("Querying ArXiv query=%s total_max_results=%d", query, max_results)
     if arxiv_client is not None:
-        body = arxiv_client.get(params)
-        return parse_atom_feed(body)
+        return fetch_with_client(arxiv_client)
 
     with ArxivApiClient(
         api_url=api_url,
         user_agent=user_agent,
         http_client=http_client,
     ) as client:
-        body = client.get(params)
-        return parse_atom_feed(body)
+        return fetch_with_client(client)
